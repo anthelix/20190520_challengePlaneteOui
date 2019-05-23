@@ -1,0 +1,132 @@
+electricite renouvelable
+
+objectifs du defi   :
+        prédire, sur la base de l’analyse de la corrélation d’une année de données de consommation et 
+        d’entraînement météorologique, la consommation d’électricité de deux sites donnés pour une année 
+        de test. En conditions opérationnelles, les nouveaux profils de consommation seraient intégrés à 
+        l'analyse des prix de fourniture d'électricité.
+
+
+
+but     :   • offre adapte aux profils des clients
+            • une ou plusieurs années de données de consommation extrapolées sont reconstituées à 
+            partir d'une seule année de données mesurées fournies par le client
+            • Ces profils extrapolés seront également combinés avec les prix de l'électricité afin 
+            d'obtenir un ensemble de données d'analyse plus large.
+info    :
+    --> prix varient bcq ds journee
+    --> 1_si conso elevee en periode creuse alors site alimentee a des couts inf
+    --> 2_profil de consomation d'une install ==> tarif de fourniture / frais de fonctionneme de PO
+    --> site > 250 kVA , analyse precise
+    --> conso variable selon la temperature ==> utilisation chauffage electriq
+        --> + 2,4GW par degre perdu
+    --> install indus, cas specifique, utilisation non thermossensibles (processus chimique ou metallurgiq)
+facteurs influencant    :
+    pour chaque site, analyser les utilisations de la thermosensibilite
+    les saisons annuelles, hebdo, quotidienne
+    humidites (influence le confort thermique)
+    jours ferie nationaux, ponts 
+    vacances 
+    les miens :     climatisation , vague de chaud, 
+                    fonte des neiges au printemps => augmemtation de la production de 40%
+                    autre moyen de chauffage (bois, gaz ...)
+                    sur 1 semaine, impact du niveau de temperature
+                    augmentation de T a 5 differente si soleil brille ou si il pleut
+                    augmemntation de T de 5 differente a 10 ou 15 ou 20 degre
+                    ecart de prix du a des promos, la dsponibilite de l'electricite,
+                    saison
+                    sucesson de jour et de nuit
+                    position du jourferie dans la semaine (mercredi different de vendredi)
+
+
+
+
+
+                    
+
+processus nv client     : 
+    --> historiq du donnees de conso combine a des simulations de prix de l'electricite (un calcul 
+        des repartion des couts de fourniture en euros/MWh)
+    --> ? Un percentile donné est ensuite utilisé pour couvrir les coûts d'approvisionnement pour un large 
+            éventail de scénarios de prix
+limite  :
+    --> peu de donnees
+    --> periode courte, moins de 1 an 
+    "Afin d'obtenir une tarification plus précise de l'offre, 
+     l'objectif de Planète OUI est de développer un modèle 
+     d'apprentissage machine où une ou plusieurs années de 
+     données de consommation extrapolées sont reconstituées à 
+     partir d'une seule année de données mesurées fournies par 
+     le client."
+
+Daraset     :
+        ID:                 ID du point de donnees (site)
+        Timestamp:          Horodatage complet avec annee, mois, jour et heure (en heure local CET et CEST)
+        temp1:              Temperatures locales en °C 
+        temp2:              Temperatures locales en °C
+        meannationaltemp :  moyenne des temperatures nationales en C
+        humidity1et 2:      Humidité relative locale (%)
+        loc1 et 2:          Coordonnees des sites etudies en degres decimaux et de la forme (latitude, longitude)
+        locsecondary1 et 2: Coordonnees des sites secondaires en degres decimaux et de la forme (latitude, longitude)
+        consumptionsecondary1, 2 et 3 : (kWh) donnees de consommation de 3 sites secondaires dont les correlations avec les 
+                                sites etudiees peubvent etre utiles
+        
+
+
+
+Note de travail:
+        Calculer le coefficient de corrélation entre 2 variables numériques revient à chercher à résumer la 
+        liaison qui existe entre les variables à l'aide d'une droite. On parle alors d'un ajustement linéaire. 
+        "wikipedia Correlation" https://fr.wikipedia.org/wiki/Corr%C3%A9lation_(statistiques)
+        cf coefficient de correlation lineaire de Bravais Pearson
+        cf matrice de correlation
+        cf un estimateur (biaisé) du coefficient de corrélation
+        http://www.astro.ulg.ac.be/cours/magain/STAT/Stat_Main_Fr/Chapitre7.html
+
+        Pour reproduire les conditions de fonctionnement, certains points de données de température et 
+        d'humidité seront manquants. La méthode d'imputation doit être soigneusement examinée.
+
+        1 modeliser les donnees avec la meannationaltemp
+        2 remplacer les moyennes par les saisons
+        3 calcul des facteurs d'effet meteo facteur = (volume_meteo/volume_normale) - 1
+        4 depolluer l'historiq de l'effet meteo
+
+        Un logiciel à la manœuvre: Une fois que les jours de référence de consommation électrique similaires sont 
+            sélectionnés, un logiciel calcule les écarts de consommation entre la consommation réelle et ce qu’elle 
+            aurait été si le jour n’avait pas été férié. Le prévisionniste applique ensuite des coefficients pour 
+            pondérer ces différents écarts. La prévision pour le jour férié à venir tient compte du résultat de 
+            cette pondération. L’ensemble des données manipulées pour la prévision de consommation est alors 
+            « nettoyées » de l’impact des aléas climatiques.
+
+        Donc, plus qu’une corrélation directe du prix du gaz avec les températures, c’est la variation entre 
+            les prévisions à moyen terme et les températures réelles qui influence les prix.
+
+
+
+
+
+kilovoltampère (kVA) mesure la puissance électrique apparente d'une installation 
+    (le kilowatt kW mesure la puissance active). Comme un voltampère est égal à un 
+    Watt (1[VA]=1[W]), on exprime dans le langage courant la puissance d'un compteur 
+    électrique en kVA ou en kW.
+    Le kilovoltampère (kVA) mesure la puissance électrique dite apparente. Plus simplement, 
+    on peut dire qu'elle définit la valeur maximale d'une installation, c'est-à-dire la 
+    puissance maximale que pourra prendre la puissance active (kW).
+GW est un symbole, qui signifie : gigawatt, unité de mesure de puissance
+    a unit of power equal to one billion (10^9) watts.
+MWh Le kilowatt-heure . Si de l'énergie est produite ou consommée à puissance constante sur une période 
+    donnée, l'énergie totale en kilowatts-heures est égale à la puissance en kilowatts multipliée par le 
+    temps en heures.
+le rang centile d'une donnée ,dans une série statistique, indique le pourcentage des données ayant une 
+    valeur inférieure ou égale à cette donnée. 
+    Les données de même valeur doivent se retrouver dans le même rang.
+    • Les données les plus faibles se retrouvent dans le rang 1.
+    • Les données les plus élevées se retrouvent dans le rang 100.
+    • Si le rang centile n'est pas un entier, on l'arrondit à l'entier supérieur. 
+    • La série étudiée doit être ordonnée. Géréralement, elle est ordonnée dans le sens croissant. 
+        Rang centil d'une donnee (d) = [(nb de donnee  de valeur inf a 'd' + la moitie du nb de donnees 
+        de meme valeur que 'd')] / [Nb total de donnees]
+Une matrice de corrélation est utilisée pour évaluer la dépendence entre plusieurs variables en même 
+    temps. Le résultat est une table contenant les coefficients de corrélation entre chaque variable et 
+    les autres. Il existe différentes méthodes de tests de corrélation : Le test de corrélation de Pearson, 
+    la corrélation de Kendall et celle de Spearman qui sont des tests basés sur le rang.  
