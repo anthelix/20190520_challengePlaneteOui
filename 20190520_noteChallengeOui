@@ -1,10 +1,9 @@
 electricite renouvelable
 
-objectifs du defi   :
-        prédire, sur la base de l’analyse de la corrélation d’une année de données de consommation et 
-        d’entraînement météorologique, la consommation d’électricité de deux sites donnés pour une année 
-        de test. En conditions opérationnelles, les nouveaux profils de consommation seraient intégrés à 
-        l'analyse des prix de fourniture d'électricité.
+Objectifs du défi/cf challenge
+L'objectif du défi est de prédire, à partir de l'analyse de la corrélation entre une année de consommation et les données de formation météorologique, la consommation électrique de deux sites donnés pour une année d'essai. Dans des conditions opérationnelles, les nouveaux profils de consommation seraient intégrés à l'analyse des prix de la fourniture d'électricité.
+
+
 
 
 
@@ -21,6 +20,13 @@ info    :
     --> conso variable selon la temperature ==> utilisation chauffage electriq
         --> + 2,4GW par degre perdu
     --> install indus, cas specifique, utilisation non thermossensibles (processus chimique ou metallurgiq)
+
+Description de l'indice de référence/cf challenge
+La persistance est un repère rapide et relativement précis. Il consiste à estimer que
+la consommation horaire de l'année y+1 est égale à celle de l'année y, en déplaçant les données
+Par exemple, la méthode de référence considérerait que la consommation horaire du samedi 4 août 2018 est égale à celle du samedi 5 août 2017.
+
+
 facteurs influencant    :
     pour chaque site, analyser les utilisations de la thermosensibilite
     les saisons annuelles, hebdo, quotidienne
@@ -38,11 +44,7 @@ facteurs influencant    :
                     sucesson de jour et de nuit
                     position du jourferie dans la semaine (mercredi different de vendredi)
 
-
-
-
-
-                    
+                   
 
 processus nv client     : 
     --> historiq du donnees de conso combine a des simulations de prix de l'electricite (un calcul 
@@ -59,7 +61,7 @@ limite  :
      partir d'une seule année de données mesurées fournies par 
      le client."
 
-Daraset     :
+Dataset     :
         ID:                 ID du point de donnees (site)
         Timestamp:          Horodatage complet avec annee, mois, jour et heure (en heure local CET et CEST)
         temp1:              Temperatures locales en °C 
@@ -67,10 +69,17 @@ Daraset     :
         meannationaltemp :  moyenne des temperatures nationales en C
         humidity1et 2:      Humidité relative locale (%)
         loc1 et 2:          Coordonnees des sites etudies en degres decimaux et de la forme (latitude, longitude)
-        locsecondary1 et 2: Coordonnees des sites secondaires en degres decimaux et de la forme (latitude, longitude)
-        consumptionsecondary1, 2 et 3 : (kWh) donnees de consommation de 3 sites secondaires dont les correlations avec les 
+
+        locsecondary 1 et 2: Coordonnees des sites secondaires en degres decimaux et de la forme (latitude, longitude)
+        consumptionsecondary 1, 2 et 3 : (kWh) donnees de consommation de 3 sites secondaires dont les correlations avec les 
                                 sites etudiees peubvent etre utiles
-        
+
+        Les humidités relatives sont fournies avec les données de température car elles représentent des variables importantes pour la consommation d'électricité : l'humidité influence en effet fortement le confort thermique. 
+	Pour reproduire les conditions de fonctionnement, certains points de données de température et d'humidité seront manquants. 
+	La méthode d'imputation doit être soigneusement examinée. 
+	Les variables "consommations secondairesi" sont les données de consommation de plusieurs sites dont la puissance de comptage est supérieure à 250 kVA du portefeuille Planète OUI. 
+	Cette relation entre les différentes consommations des sites doit être étudiée pour compléter ou interpoler avec précision les données. Les horodatages peuvent être exprimés en mois ou jour de l'année, jour de la semaine et heures, pour étudier l'impact des saisonnalités annuelles, hebdomadaires et quotidiennes. 
+	Une attention particulière devrait être accordée au traitement des jours fériés nationaux.
 
 
 
@@ -130,3 +139,16 @@ Une matrice de corrélation est utilisée pour évaluer la dépendence entre plu
     temps. Le résultat est une table contenant les coefficients de corrélation entre chaque variable et 
     les autres. Il existe différentes méthodes de tests de corrélation : Le test de corrélation de Pearson, 
     la corrélation de Kendall et celle de Spearman qui sont des tests basés sur le rang.  
+
+
+
+
+traduction 
+Planète OUI se doit d'offrir un approvisionnement en électricité verte à des prix adaptés aux profils de consommation de ses clients. L'électricité est en effet achetée sur les marchés de l'électricité, où les prix sont très variables au cours d'une journée. Un site dont la part de consommation est élevée lorsque les prix sont bas, par exemple au milieu de l'après-midi, sera approvisionné à des coûts inférieurs à ceux d'un site consommant de l'électricité principalement pendant les périodes de pointe. Le profil de consommation d'une installation doit alors être évalué pour calculer la meilleure estimation des tarifs de fourniture, permettant à Planète OUI de couvrir ses coûts d'exploitation tout en fournissant son client au meilleur prix. Les sites dont la puissance de comptage est supérieure à 250 kVA font l'objet d'une méthodologie d'analyse précise. La plupart des sites se caractérisent par une consommation variant fortement avec la température en raison des systèmes de chauffage électrique. La consommation nationale d'électricité française est la plus sensible à la température en Europe, avec une augmentation de 2,4 GW par degré perdu, soit la production de 2 ou 3 réacteurs nucléaires. 
+Néanmoins, les installations industrielles sont des cas particuliers, car leur consommation pourrait être fortement liée à des utilisations non thermosensibles, par exemple chimiques ou chimiques. procédés métallurgiques. Pour chaque site, l'objectif est notamment d'analyser les utilisations de la thermosensibilité. Toutefois, cela ne suffit pas pour déterminer avec précision la consommation pro les, d'autres facteurs a ecting la consommation, par exemple annuelle, hebdomadaire et des saisonnalités quotidiennes. Lorsque Planète OUI prépare l'approvisionnement en électricité, elle reçoit à partir des données historiques de consommation des clients potentiels.
+Ces avantages sont combinés à des simulations de prix de l'électricité pour calculer une distribution des coûts d'approvisionnement en €/MWh. Un percentile donné est ensuite utilisé pour couvrir les coûts d'approvisionnement pour un large éventail de scénarios de prix.
+Cependant, les données du client sont souvent incomplètes et s'étalent sur une période relativement courte, rarement supérieure à un an. Afin d'obtenir une tarification plus précise de l'offre, l'objectif de Planète OUI est de développer un modèle d'apprentissage machine où une ou plusieurs années de données de consommation extrapolées sont reconstituées à partir d'une seule année de données de mesure fournies par le client. Ces profils extrapolés seront également combinés avec les prix de l'électricité afin d'obtenir un ensemble de données d'analyse plus large.
+
+
+
+

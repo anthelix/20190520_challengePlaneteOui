@@ -1,0 +1,234 @@
+Workflow d'un projet d'apprentissage machine
+Aller au profil de Ayush Pantalon
+Pantalon Ayush
+11 janvier
+Introduction
+
+Dans ce blog, nous discuterons du flux de travail d'un projet d'apprentissage machine qui inclut toutes les étapes nécessaires pour construire le projet d'apprentissage machine approprié à partir de zéro.
+
+Nous passerons également en revue le prétraitement des données, le nettoyage des données, l'exploration des fonctions et l'ingénierie des fonctions et montrerons l'impact qu'il a sur la performance des modèles d'apprentissage machine. Nous aborderons également quelques étapes de pré-modélisation qui peuvent aider à améliorer la performance du modèle.
+
+Python Libraries qui seraient nécessaires pour réaliser la tâche :
+ 1. Numpy
+ 2. Pandas
+ 3. Trousse de science-fiction Apprendre
+ 4. Matplotlib
+Vue d'ensemble du flux de travail de ML
+Comprendre le workflow d'apprentissage machine
+
+Nous pouvons définir le workflow d'apprentissage machine en 3 étapes.
+
+    Collecte des données
+    Prétraitement des données
+    Recherche du modèle qui conviendra le mieux au type de données
+    Formation et mise à l'essai du modèle
+    Évaluation
+
+D'accord, mais commençons d'abord par l'essentiel.
+Qu'est-ce que le modèle d'apprentissage machine ?
+
+Le modèle d'apprentissage machine n'est rien d'autre qu'un morceau de code ; un ingénieur ou un informaticien le rend intelligent grâce à la formation avec des données. Donc, si vous donnez des ordures au modèle, vous obtiendrez des ordures en retour, c'est-à-dire que le modèle formé fournira des prévisions fausses ou erronées.
+
+
+1. Collecte des données
+
+Le processus de collecte des données dépend du type de projet que nous voulons réaliser, si nous voulons réaliser un projet ML qui utilise des données en temps réel, alors nous pouvons construire un système IdO qui utilise différentes données de capteurs. L'ensemble de données peut être collecté à partir de diverses sources telles qu'un fichier, une base de données, un capteur et de nombreuses autres sources, mais les données collectées ne peuvent pas être utilisées directement pour effectuer le processus d'analyse car il peut y avoir beaucoup de données manquantes, des valeurs extrêmement élevées, des données de texte non organisées ou des données bruyantes. Par conséquent, pour résoudre ce problème, la préparation des données est faite.
+
+Nous pouvons également utiliser certains ensembles de données gratuits qui sont présents sur Internet. Kaggle et UCI Machine learning Repository sont les référentiels les plus utilisés pour la création de modèles d'apprentissage machine. Kaggle est l'un des sites Web les plus visités qui est utilisé pour la pratique des algorithmes d'apprentissage machine, ils accueillent également des concours dans lesquels les gens peuvent participer et obtenir de tester leurs connaissances de l'apprentissage machine.
+
+
+
+
+
+2. Prétraitement des données
+
+Le prétraitement des données est l'une des étapes les plus importantes de l'apprentissage machine. C'est l'étape la plus importante qui aide à construire des modèles d'apprentissage machine plus précisément. Dans l'apprentissage machine, il existe une règle 80/20. Chaque spécialiste des données devrait consacrer 80 % de son temps au prétraitement des données et 20 % à l'analyse.
+Qu'est-ce que le prétraitement des données ?
+
+Le prétraitement des données est un processus de nettoyage des données brutes, c'est-à-dire que les données sont recueillies dans le monde réel et converties en un ensemble de données propres. En d'autres termes, chaque fois que les données sont recueillies auprès de différentes sources, elles le sont dans un format brut et ces données ne peuvent être analysées.
+ Par conséquent, certaines étapes sont exécutées pour convertir les données en un petit ensemble de données propres, cette partie du processus est appelée prétraitement des données.
+Pourquoi en avons-nous besoin ?
+
+Comme nous le savons, le prétraitement des données est un processus de nettoyage des données brutes en données propres, ce qui peut être utilisé pour former le modèle. C'est pourquoi nous avons absolument besoin d'un prétraitement des données pour obtenir de bons résultats à partir du modèle appliqué dans les projets d'apprentissage machine et d'apprentissage approfondi.
+
+La plupart des données du monde réel sont désordonnées, certains de ces types de données le sont :
+
+1. Données manquantes : Les données manquantes peuvent être trouvées lorsqu'elles ne sont pas créées en permanence ou en raison de problèmes techniques dans l'application (système IOT).
+
+2. Données bruyantes : Ce type de données est également appelé outliners, ceci peut se produire en raison d'erreurs humaines (collecte manuelle des données par l'homme) ou d'un problème technique de l'appareil au moment de la collecte des données.
+
+3. Données incohérentes : Ce type de données peut être collecté en raison d'erreurs humaines (erreurs de nom ou de valeurs) ou de duplication des données.
+Trois types de données
+
+1. Numérique, p. ex. revenu, âge
+
+2. Catégorique, p. ex. sexe, nationalité
+
+3. Ordinal p. ex. faible/moyen/élevé
+Comment le prétraitement des données peut-il être effectué ?
+
+Ce sont quelques-unes des techniques de base de prétraitement qui peuvent être utilisées pour convertir les données brutes.
+
+1. Conversion des données : Comme nous savons que les modèles d'apprentissage machine ne peuvent traiter que des caractéristiques numériques, les données catégorielles et ordinales doivent donc être converties en caractéristiques numériques.
+
+2. Ignorer les valeurs manquantes : Chaque fois que nous rencontrons des données manquantes dans l'ensemble de données, nous pouvons supprimer la ligne ou la colonne de données en fonction de nos besoins. Cette méthode est connue pour être efficace mais elle ne devrait pas être exécutée s'il y a beaucoup de valeurs manquantes dans le jeu de données.
+
+3. Remplir les valeurs manquantes : Chaque fois que nous rencontrons des données manquantes dans l'ensemble de données, nous pouvons remplir les données manquantes manuellement, le plus souvent la valeur moyenne, médiane ou la plus haute fréquence est utilisée.
+
+4. Apprentissage machine : Si nous avons quelques données manquantes, nous pouvons prédire quelles données seront présentes à la position vide en utilisant les données existantes.
+
+5. Détection des valeurs aberrantes : Certaines données d'erreur qui pourraient être présentes dans notre ensemble de données s'écartent considérablement des autres observations d'un ensemble de données. Exemple : poids humain = 800 Kg ; en raison d'une erreur de frappe de 0 supplémentaire].
+
+
+
+
+
+3. Recherche du modèle qui conviendra le mieux au type de données
+
+Notre objectif principal est de former le modèle le plus performant possible, en utilisant les données prétraitées.
+Apprentissage supervisé :
+
+Dans l'apprentissage supervisé, un système d'IA est présenté avec des données qui sont étiquetées, ce qui signifie que chaque donnée est étiquetée avec la bonne étiquette.
+
+L'apprentissage supervisé est classé en 2 autres catégories qui sont "Classification" et "Régression".
+Classification :
+
+Le problème de classification se pose lorsque la variable cible est catégorique (c.-à-d. que la sortie peut être classée en classes - elle appartient à la classe A ou B ou à autre chose).
+
+Un problème de classification se pose lorsque la variable de sortie est une catégorie, telle que "rouge" ou "bleu", "maladie" ou "pas de maladie" ou "spam" ou "non spam".
+Classification | GIF : www.cs.toronto.edu
+
+Comme le montre la représentation ci-dessus, nous avons 2 classes qui sont représentées sur le graphique : rouge et bleu qui peuvent être représentées comme'fleur setosa' et'fleur versicolore', nous pouvons représenter l'axe X comme'Sepal Width' et l'axe Y comme'Sepal Length', donc nous essayons de créer la ligne qui sépare au mieux les deux classes de fleurs.
+
+Ce sont les algorithmes de classification les plus utilisés.
+
+    K-Nearest Neighbor
+    Naive Bayes
+    Arbres de décision/Forêt aléatoire
+    Support de la machine vectorielle
+    Régression logistique
+
+Régression :
+
+Alors qu'un problème de régression se pose lorsque la variable cible est continue (c.-à-d. que la sortie est numérique).
+Régression | GIF : techburst.io
+
+Comme le montre la représentation ci-dessus, on peut imaginer que l'axe des X du graphique représente les " Résultats du test " et que l'axe des Y représente le " QI ". Nous essayons donc de créer la meilleure ligne d'ajustement dans le graphique donné afin de pouvoir utiliser cette ligne pour prédire tout QI approximatif qui n'est pas présent dans les données données données.
+
+Ces quelques algorithmes de régression les plus utilisés.
+
+    Régression linéaire
+    Soutenir la régression vectorielle
+    Tenue de décision/Forêt aléatoire
+    La régression gaussienne progresse
+    Méthodes d'ensemble
+
+Apprentissage non supervisé :
+
+Dans l'apprentissage non supervisé, un système d'IA est présenté avec des données non étiquetées et non classées et les algorithmes du système agissent sur les données sans formation préalable. La sortie dépend des algorithmes codés. Soumettre un système à un apprentissage non supervisé est une façon de tester l'IA.
+
+L'apprentissage non supervisé est classé en 2 autres catégories qui sont "Clustering" et "Association".
+Regroupement :
+
+Un ensemble d'entrées doit être divisé en groupes. Contrairement à la classification, les groupes ne sont pas connus à l'avance, ce qui en fait une tâche généralement non supervisée.
+Regroupement
+
+Les méthodes utilisées pour le clustering sont :
+
+    Mélanges gaussiens
+    K-Means Clustering
+    Stimuler
+    Regroupement hiérarchique
+    K-Means Clustering
+    Regroupement spectral
+
+Aperçu des modèles par catégories :
+Aperçu des modèles
+
+
+
+
+4. Formation et test du modèle sur les données
+
+Pour la formation d'un modèle, nous avons d'abord divisé le modèle en trois sections : " Données de formation ", " Données de validation " et " Données de test ".
+
+Vous entraînez le classificateur à l'aide de l'ensemble de données d'entraînement, réglez les paramètres à l'aide de l'ensemble de validation, puis testez les performances de votre classificateur sur l'ensemble de données d'essai non visible. Il est important de noter qu'au cours de la formation, seul l'ensemble de formation et/ou de validation est disponible. L'ensemble des données d'essai ne doit pas être utilisé pendant l'entraînement du classificateur. L'ensemble de test ne sera disponible que pendant le test du classificateur.
+
+Set d'entraînement : L'ensemble de formation est le matériel par lequel l'ordinateur apprend à traiter l'information. L'apprentissage machine utilise des algorithmes pour effectuer la partie formation. Un ensemble de données utilisées pour l'apprentissage, c'est-à-dire qu'elles doivent correspondre aux paramètres du classificateur.
+
+Set de validation : La validation croisée est principalement utilisée dans l'apprentissage machine appliqué pour estimer la compétence d'un modèle d'apprentissage machine sur des données invisibles. Un ensemble de données invisibles est utilisé à partir des données d'entraînement pour régler les paramètres d'un classificateur.
+
+Banc d'essai : Ensemble de données invisibles utilisé uniquement pour évaluer le rendement d'un classificateur entièrement spécifié.
+
+Une fois les données divisées en 3 segments, nous pouvons commencer le processus de formation.
+
+Dans un ensemble de données, un ensemble de formation est mis en œuvre pour construire un modèle, tandis qu'un ensemble de test (ou de validation) sert à valider le modèle construit. Les points de données de l'ensemble de formation sont exclus de l'ensemble de test (validation). Habituellement, un ensemble de données est divisé en un ensemble d'entraînement, un ensemble de validation (certaines personnes utilisent plutôt un " ensemble de test ") à chaque itération, ou divisé en un ensemble d'entraînement, un ensemble de validation et un ensemble de test à chaque itération.
+
+Le modèle utilise l'un des modèles que nous avions choisis à l'étape 3/ point 3. Une fois le modèle formé, nous pouvons utiliser le même modèle formé pour prédire en utilisant les données de test, c'est-à-dire les données invisibles. Une fois cela fait, nous pouvons élaborer une matrice de confusion, ce qui nous indique dans quelle mesure notre modèle est bien formé. Une matrice de confusion a 4 paramètres, qui sont'vrais positifs','vrais négatifs','faux positifs' et'faux négatifs'. Nous préférons obtenir plus de valeurs dans les vrais négatifs et les vrais positifs pour obtenir un modèle plus précis. La taille de la matrice de confusion dépend entièrement du nombre de classes.
+
+    Vrais positifs : Il s'agit de cas dans lesquels nous avons prédit VRAI et notre résultat prédit est correct.
+    Vrais négatifs : Nous avons prédit FAUX et le résultat prédit est correct.
+    Faux positifs : Nous avons prédit VRAI, mais le résultat réel prédit est FAUX.
+    Faux négatifs : Nous avons prédit FAUX, mais le résultat réel prédit est VRAI.
+
+Nous pouvons également déterminer l'exactitude du modèle à l'aide de la matrice de confusion.
+
+    Précision = (vrais positifs + vrais négatifs) / (nombre total de classes)
+
+c'est-à-dire pour l'exemple ci-dessus :
+
+Précision = (100 + 50) / 165 = 0,9090 (précision de 90,9 %)
+
+
+
+
+5. Évaluation
+
+L'évaluation des modèles fait partie intégrante du processus d'élaboration des modèles. Il aide à trouver le meilleur modèle qui représente nos données et à déterminer dans quelle mesure le modèle choisi fonctionnera à l'avenir.
+
+Pour améliorer le modèle, nous pourrions régler les hyper-paramètres du modèle et essayer d'en améliorer la précision et aussi examiner la matrice de confusion pour essayer d'augmenter le nombre de vrais positifs et de vrais négatifs.
+
+
+Conclusion
+
+Dans ce blog, nous avons discuté du flux de travail d'un projet d'apprentissage machine et nous donne une idée de base de la façon dont le problème devrait être abordé.
+
+Mise en place du workflow d'un projet d'apprentissage machine : https://github.com/NotAyushXD/Titanic-dataset
+
+    Apprentissage machineApprentissage superviséApprentissage superviséProjets d'apprentissage non supervisés
+
+Aller au profil de Ayush Pantalon
+Pantalon Ayush
+
+Enthousiaste de l'apprentissage machine
+Vers la science des données
+Vers la science des données
+
+Partager des concepts, des idées et des codes.
+En savoir plus sur Vers la science des données
+Un aperçu du paquet Datatable de Python
+Voir le profil de Parul Pandey
+Parul Pandey
+1er juin
+En savoir plus sur Vers la science des données
+Les 13 meilleures compétences pour devenir un scientifique des données Rockstar
+Aller au profil de Admond Lee
+L'amant Lee
+31 mai
+En savoir plus sur Vers la science des données
+Utiliser l'apprentissage du renforcement pour échanger Bitcoin contre un profit massif
+Voir le profil de Adam King
+Adam King
+4 juin
+Réponses
+Applaudissements d'Ayush Pant (auteur)
+Aller au profil de Techienest
+Techienest
+14 mai
+
+merci de partager ce blog d'apprentissage machine.
+Vers la science des données
+Partager des concepts, des idées et des codes.
+Vers la science des données
+Ne manquez jamais une histoire de Towards Data Science, lorsque vous vous inscrivez à Medium. En savoir plus
+
