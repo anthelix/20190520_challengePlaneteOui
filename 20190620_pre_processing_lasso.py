@@ -41,22 +41,26 @@ print(dataInt.dtypes)
 # ou regression
 from sklearn.impute import SimpleImputer
 imputer = SimpleImputer(missing_values=np.nan, strategy = 'mean')
-imputer.fit(X[:, :5])
-X[:, :5] = imputer.transform(X[:, :5])
-
-
-
+imputer.fit(X[:, 0:5])
+X[:, 0:5] = imputer.transform(X[:, 0:5])
 
 
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
 
 # construction du modele multiple
-from sklearn.linear_model import LinearRegression
-regressor = LinearRegression()
-regressor.fit(X_train, y_train)
+from sklearn.linear_model import Lasso
+lasso = Lasso()
+ls = lasso.fit(X_train, y_train)
 
 #  Faire de nouvelles predictions
-y_pred  = regressor.predict(X_test) # valeur des VI dont on peut predire la valeur des VD
+y_pred  = lasso.predict(X_test) # valeur des VI dont on peut predire la valeur des VD
 y_pred # predictions a partir de valeurs dans le test set que nous avonc construit
-regressor.predict(np.array([[1, 0, 130000, 140000, 300000]]))# predictions vous VIqui ne sont pas dans le X_dataset
+#regressor.predict(np.array([[1, 0, 130000, 140000, 300000]]))# predictions vous VIqui ne sont pas dans le X_dataset
+
+
+print("Training set score: {:.2f}".format(ls.score(X_train, y_train)))
+print("Test set score: {:.2f}".format(ls.score(X_test, y_test)
+print("Number of features used: {}".format(np.sum(ls.coef_ !=0)))
+
+
