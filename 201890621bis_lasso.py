@@ -15,7 +15,8 @@ import datetime as dt
 from datetime import datetime
 import calendar
 
-
+dataInt['consumption_1'] = dataOut['consumption_1']
+dataInt['consumption_2'] = dataOut['consumption_2']
 dataInt["date"] = dataInt.timestamp.apply(lambda x : x.split('T')[0])
 dataInt["hour"] = dataInt.timestamp.apply(lambda x : x.split('T')[1].split(":")[0]).astype(int)
 #dataInt["weekday"] = dataInt.date.apply(lambda dateString : calendar.day_name[datetime.strptime(dateString,"%Y-%m-%d").weekday()])
@@ -30,11 +31,19 @@ for var in categoryVariableList:
 dataInt = dataInt.drop(["timestamp", "ID", "loc_1", "loc_2", "loc_secondary_1", "loc_secondary_2", "loc_secondary_3"],axis=1)
 
 
-X = dataInt.iloc[:, 1:].values
-y = dataOut.iloc[:, 1:].values
+cols = dataInt.columns.tolist()
+dataInt = dataInt[['temp_1', 'temp_2', 'mean_national_temp', 'humidity_1', 'humidity_2','consumption_secondary_1', 
+                   'consumption_secondary_2','consumption_secondary_3', 'date', 'hour', 
+                   'consumption_1', 'consumption_2']]
 
 print("dataInt:\n", dataInt.isnull().sum())
 print(dataInt.dtypes)
+
+
+X = dataInt.iloc[:, 0:].values
+y = dataInt.iloc[:, -2:].values
+
+
 
 
 # Taking care of missing data
@@ -82,6 +91,14 @@ print("r^2 on test data : %f" % r2_score_enet)
 
 
 
+import statsmodels.api as sm
+X1_train = sm.add_constant(X_train)
+y_train.shape
+X1_train.shape
+reg = sm.OLS(y_train,X1_train)
+resReg = reg.fit()
+
+print(resReg.summary())
 
 
 
