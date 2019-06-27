@@ -17,6 +17,7 @@ import calendar
 
 dataInt['consumption_1'] = dataOut['consumption_1']
 dataInt['consumption_2'] = dataOut['consumption_2']
+
 dataInt["date"] = dataInt.timestamp.apply(lambda x : x.split('T')[0])
 dataInt["hour"] = dataInt.timestamp.apply(lambda x : x.split('T')[1].split(":")[0]).astype(int)
 #dataInt["weekday"] = dataInt.date.apply(lambda dateString : calendar.day_name[datetime.strptime(dateString,"%Y-%m-%d").weekday()])
@@ -40,7 +41,7 @@ print("dataInt:\n", dataInt.isnull().sum())
 print(dataInt.dtypes)
 
 
-X = dataInt.iloc[:, 0:].values
+X = dataInt.iloc[:, :-2].values
 y = dataInt.iloc[:, -2:].values
 
 
@@ -88,24 +89,23 @@ r2_score_enet = r2_score(y_test, y_pred_enet)
 print(enet)
 print("r^2 on test data : %f" % r2_score_enet)
 
+#centrer et réduire les données d'apprentissage
+
+
+from sklearn.model_selection import train_test_split
+data_train, data_test = train_test_split(dataInt, test_size = 0.2)
+imputer = SimpleImputer(missing_values=np.nan, strategy = 'mean')
+imputer.fit(data_train[:, 0:6])
+data_train[:, 0:6] = imputer.transform(data_train[:, 0:6])
 
 
 
-import statsmodels.api as sm
-X1_train = sm.add_constant(X_train)
-y_train.shape
-X1_train.shape
-reg = sm.OLS(y_train,X1_train)
-resReg = reg.fit()
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+Ztrain =sc.fit_transform(X_train)
+print(np.mean(Ztrain, axis=0))
+print(np.var(Ztrain, axis=0))
 
-print(resReg.summary())
-
-
-
-
-
-#print("Training set score: {:.2f}".format(ls.score(X_train, y_train)))
-#print("Test set score: {:.2f}".format(ls.score(X_test, y_test)))
-#print("Number of features used: {}".format(np.sum(ls.coef_ != 0)))
-
-
+from sklearn.linear_model import Lasso
+regLasso1 = Lasso(fit_intercept=False,normalize=False)
+print(regLasso1)
