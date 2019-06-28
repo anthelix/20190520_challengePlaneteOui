@@ -11,39 +11,16 @@ import sys
 from impyute.imputation.cs import fast_knn
 from impyute.imputation.cs import mice
 
-# pip install git+https://github.com/novafloss/workalendar.git
-# pip install vacances-scolaires-france
-# 
-#from dateutil import parser
-#date = parser.parse("4th of July, 2015")
-#date
+
 
 # my fonctions
 def conv(data):
     data["date"] = data.timestamp.apply(lambda x : x.split('T')[0])
-    #data['date'] =data.timestamp.apply(lambda x : x.split()[0]) #objet
     data["hour"] = data.timestamp.apply(lambda x : x.split('T')[1].split(":")[0])
-    #.astype(int)
     data["weekday"] = data.date.apply(lambda dateString : calendar.day_name[datetime.strptime(dateString,"%Y-%m-%d").weekday()])
     data["month"] = data.date.apply(lambda dateString : calendar.month_name[datetime.strptime(dateString,"%Y-%m-%d").month])
     data["datetime_perso"] = data.timestamp.apply(lambda x : get_format_the_date(x))
-    #data['date'] = pd.to_datetime(data['date']).dt.strftime("%Y%m%d").astype(int)
-    #data["date"] = data.datetime.apply(lambda x : x.split('T')[0])
-    #data['timestamp']=pd.to_datetime(data['timestamp']) 
-    #data['year']=data['timestamp'].dt.year
-    #data['month']=data['timestamp'].dt.month
-    #data['weekday']=data['timestamp'].dt.day
-    #data['hour']=data['timestamp'].dt.hour
-    #data['sec']=data['timestamp'].dt.second
-    #data['min']=data['timestamp'].dt.minute
     return data
-
-
- 
-
-
-
-
 
 ## get season
 def get_season(doy):
@@ -59,8 +36,6 @@ def get_season(doy):
     else:
         season = 'winter'
     return season
-
-
 
 ## verifie si jour ferie
 def easter_date(year):
@@ -123,106 +98,68 @@ def business_day(timestamp):
         return True
     else:
         return False
-#from datetime import date
-#dataInt_Xy['dateA1'] = dataInt_Xy['timestamp'].apply(lambda x : x.split('T')[0])
-#dataInt_Xy['dateA2'] = dataInt_Xy['dateA1'].apply(lambda dateString : dt.datetime.strptime(dateString,"%Y-%m-%d").date())
-  
+    
+    
 
-
-# IMPORTING THE DATA SET
+# IMPORTING THE DATA SET AND COMBINE
 dataInt = pd.read_csv('./data_set1/input_training_ssnsrY0.csv')
 dataTest = pd.read_csv('./data_set1/input_test_cdKcI0e.csv')
 dataOut = pd.read_csv('./data_set1/output_training_Uf11I9I.csv')
-
-# Data summary
-dataInt.shape
-dataInt.head(2)
-dataInt.dtypes
 dataInt.info()
-dataInt.describe()
+#combine Input train, Input Test and  output Train
+data_raw = dataInt.append(dataTest)
+data = pd.merge(data_raw, dataOut, on='ID', how='left')
+data.drop('ID', inplace=True, axis=1)
 
-# copy de travail
-dataInt['consumption_1'] = dataOut['consumption_1']
-dataInt['consumption_2'] = dataOut['consumption_2']
-dataInt_raw = dataInt.copy()
-dataTest_raw = dataTest.copy()
-
-dataInt["income_humidity1"] = pd.cut(dataInt["humidity_1"],
-                               bins=[0., 1.5, 3.0, 4.5, 6., np.inf],
-                               labels=[1, 2, 3, 4, 5])
-dataInt["income_humidity1"].value_counts()
-dataInt["income_humidity1"].hist()
-# explor data
-dataInt_raw.shape, dataTest_raw.shape
-dataInt_raw.head(2), dataTest_raw.head(2)
-dataInt_raw.info(), dataTest_raw.info()
-
-dataInt.info()
-dataTest.info()
+# Feature Enginering
 
 # creating New columns from 'timestamp'
-conv(dataInt)
-conv(dataTest)
+conv(data)
 
-dataInt['day of week']=dataInt['datetime_perso'].dt.dayofweek 
-temp = dataInt['datetime_perso']
-temp.head()
 
+
+
+data['day of week']=data['datetime_perso'].dt.dayofweek 
+temp = data['datetime_perso']
 def applyer(row):
     if row.dayofweek == 5 or row.dayofweek == 6:
         return 1
     else:
         return 0 
-temp2 = dataInt['datetime_perso'].apply(applyer) 
-dataInt['weekend']=temp2
-
-from pandas.plotting import register_matplotlib_converters
-dataInt.index = dataInt['datetime_perso']
-df = dataInt.drop('ID', 1)
-ts1 = df['consumption_1']
-ts2 = df['consumption_2']
-
-plt.figure(figsize=(16,8))
-plt.plot(ts1, label='consum_1') 
-plt.plot(ts2, label='consum_2')
-
-ts1.head()
-ts2.head()
-df.tail()
+temp2 = data['datetime_perso'].apply(applyer) 
+data['weekend']=temp2
 
 ## create season and rangeInYear
-s = pd.Series(dataInt['timestamp'])
+s = pd.Series(data['timestamp'])
 s = pd.to_datetime(s)
-dataInt['rangeInYear'] = s.dt.strftime('%j').astype(int)
-#dataInt_Xy = dataInt_Xy.drop_duplicates(subset = ['rangeInYear'])                    # A ENLRVER
-dataInt['season'] = dataInt['rangeInYear'].apply(lambda d : get_season(d))
+data['rangeInYear'] = s.dt.strftime('%j').astype(int)
+data['season'] = data['rangeInYear'].apply(lambda d : get_season(d))
 
 ## create jours working days
-dataInt['is_business_day'] = dataInt['datetime_perso'].apply(lambda e : int(business_day(e)))
+data['is_business_day'] = data['datetime_perso'].apply(lambda e : int(business_day(e)))
 
 # Is it an holiday for zone A, B or C?
 d = SchoolHolidayDates()
-dataInt['is_holiday'] = dataInt['datetime_perso'].apply(lambda f : int(d.is_holiday(datetime.date(f))))
-
-dataInt.groupby('month')['consumption_1'].mean().plot.bar(fontsize=14, figsize=(10,7), title= 'monthly consum 1')
-dataInt.groupby('month')['consumption_2'].mean().plot.bar(fontsize=14, figsize=(10,7), title= 'monthly consum 2')
-dataInt.groupby('day of week')['consumption_1'].mean().plot.bar(fontsize=14, figsize=(10,7), title= 'daily consum 1')
-dataInt.groupby('day of week')['consumption_2'].mean().plot.bar(fontsize=14, figsize=(10,7), title= 'daily consum 2')
-dataInt.groupby('hour')['consumption_1'].mean().plot.bar(fontsize=14, figsize=(10,7), title= 'hourly consum 1')
-dataInt.groupby('hour')['consumption_2'].mean().plot.bar(fontsize=14, figsize=(10,7), title= 'hourly consum 2')
-dataInt.groupby('is_business_day')['consumption_1'].mean().plot.bar(fontsize=14, figsize=(10,7), title= ' business day consum 1')
-dataInt.groupby('is_business_day')['consumption_2'].mean().plot.bar(fontsize=14, figsize=(10,7), title= 'business day consum 2')
-dataInt.groupby('is_holiday')['consumption_1'].mean().plot.bar(fontsize=14, figsize=(10,7), title= ' holiday day consum 1')
-dataInt.groupby('is_holiday')['consumption_2'].mean().plot.bar(fontsize=14, figsize=(10,7), title= 'holiday day consum 2')
+data['is_holiday'] = data['datetime_perso'].apply(lambda f : int(d.is_holiday(datetime.date(f))))
 
 
 
 
+## missing values
 
-dataInt_time.dtypes
-type(dataInt_Xy)
-dataInt_Xy.dtypes
+data_missing = data[['temp_1', 'temp_2', 'mean_national_temp', 'humidity_1', 'humidity_2','consumption_secondary_1', 'consumption_secondary_2','consumption_secondary_3']].copy()
+sample_incomplete_rows = data[data.isnull().any(axis=1)]
 
+# imputation par MICE
+imputed_training_mice=mice(data_missing.values)
+data_mice = pd.DataFrame(imputed_training_mice, columns=data_missing.columns, index = list(data.index.values))
+data_mice.loc[sample_incomplete_rows.index.values]
+
+
+# Imputation par KNN 
+sys.setrecursionlimit(100000) #Increase the recursion limit of the OS
+# start the KNN training
+imputed_training_KNN=fast_knn(data_missing.values, k=30)
 
 
 
@@ -235,7 +172,7 @@ for var in categoryVariableList:
 dataInt_Xy = dataInt_Xy.drop(["ID","loc_1", "loc_2", "loc_secondary_1", "loc_secondary_2", "loc_secondary_3", 'timestamp', 'datetime_perso', 'rangeInYear'], axis=1)
 
 #let's name the categorical and numeical attributes 
-categorical_attributes = list(dataInt_Xy.select_dtypes(include=['category']).columns)
+categorical_attributes = list(dataInt_Xy.select_dtypes(include=['object']).columns)
 numerical_attributes = list(dataInt_Xy.select_dtypes(include=['float64', 'int64']).columns)
 print('categorical_attributes:', categorical_attributes)
 print('numerical_attributes:', numerical_attributes)
@@ -254,7 +191,6 @@ null_values_apptr.head()
 dataInt_Xy.isnull().sum()
 
 
-data_missing = dataInt_Xy[['temp_1', 'temp_2', 'mean_national_temp', 'humidity_1', 'humidity_2','consumption_secondary_1', 'consumption_secondary_2','consumption_secondary_3']].copy()
 
 # imputation par MICE
 imputed_training_mice=mice(data_missing.values)
