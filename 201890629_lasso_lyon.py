@@ -12,7 +12,7 @@ from impyute.imputation.cs import fast_knn
 from impyute.imputation.cs import mice
 #from fancyimpute import MICE
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 # my fonctions
 def conv(data):
     data["date"] = data.timestamp.apply(lambda x : x.split('T')[0])
@@ -28,7 +28,7 @@ def conv(data):
     data["datetime_perso"] = data.timestamp.apply(lambda x : get_format_the_date(x))
     data['year']=data['datetime_perso'].dt.year
     data['month']=data['datetime_perso'].dt.month
-    #data['weekday']=data['datetime_perso'].dt.day
+    data['weekday']=data['datetime_perso'].dt.day
     data['timestamp'] = pd.to_datetime(data['timestamp'])
     data['hours'] = data['timestamp'].dt.hour
     #data['hour']=data['datetime_perso'].dt.hour
@@ -120,23 +120,17 @@ dataInt.info()
 
 #combine
 data_raw = dataInt.append(dataTest)
-
+data = pd.merge(data_raw, dataOut, on='ID', how='left')
 #data engeebering
 
-dI = data_raw.copy()
-#dI_labels = dI.drop(['ID', 'timestamp', 'temp_1', 'temp_2', 'mean_national_temp', 'humidity_1', 'humidity_2', 'consumption_secondary_1', 'consumption_secondary_2', 'consumption_secondary_3', 'loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
+dI = data.copy()
+dI_labels = dI.drop(['ID', 'timestamp', 'temp_1', 'temp_2', 'mean_national_temp', 'humidity_1', 'humidity_2', 'consumption_secondary_1', 'consumption_secondary_2', 'consumption_secondary_3', 'loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
 dI_num = dI.drop(['timestamp','loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
 imputed_training_mice=mice(dI_num.values)
 data_mice = pd.DataFrame(imputed_training_mice, columns=dI_num.columns, index = list(dI.index.values))
 dI_NonNum = dI.select_dtypes(include=[np.object])
-
-# ca deconne ici
 dClean = data_mice.join(dI_NonNum)
-
-
-
 d_tr = dClean.drop(['loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
-
 
 #create extra attribute
 
@@ -149,7 +143,7 @@ d_tr['timestamp'] = pd.to_datetime(d_tr.timestamp, format = '%Y-%m-%dT%H:%M:%S.%
 ## create season and rangeInYear
 s = pd.to_datetime(pd.Series(d_tr['timestamp']))
 d_tr['rangeInYear'] = s.dt.strftime('%j').astype(int)
-
+d_tr['season'] = d_tr['rangeInYear'].apply(lambda d : get_season(d))
 ## create jours working days
 
 d_tr['is_business_day'] = d_tr['datetime_perso'].apply(lambda e : int(business_day(e)))
@@ -157,80 +151,48 @@ d_tr['is_business_day'] = d_tr['datetime_perso'].apply(lambda e : int(business_d
 # Is it an holiday for zone A, B or C?
 d = SchoolHolidayDates()
 d_tr['is_holiday'] = d_tr['datetime_perso'].apply(lambda f : int(d.is_holiday(datetime.date(f))))
-d_tr['season'] = d_tr['rangeInYear'].apply(lambda d : get_season(d))
-d_tr= d_tr.drop(['rangeInYear', 'datetime_perso', 'date', 'timestamp'], axis=1)
+d_tr = d_tr.drop(['rangeInYear', 'datetime_perso', 'date'], axis=1)
 
 
-d_ready = pd.merge(d_tr, dataOut, on='ID', how='right')
+d_tr.info()
 
 
-
-
-## gerer les dummies et les variables num
-train_new = d_ready[d_ready['consumption_1'].notnull()]
-test_new = d_ready[d_ready['consumption_1'].isnull()]
-train_new.shape
-test_new.shape
-
-
-
-featuresObject = ['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday']
-for var in featuresObject:
-    d_ready[var] = d_ready[var].astype("category")
-numeric_features = d_ready.select_dtypes(include=['float64', 'int64']).columns
-     
-# Les Num
-sc=StandardScaler()
-d_sc=sc.fit_transform(d_ready[numeric_features])
-for i, col in enumerate(numeric_features):
-       d_ready[col] = d_sc[:,i]
-
-
-#scaler = StandardScaler()
-#scaler.fit(train_new[numeric_features])
-#scaled = scaler.transform(train_new[numeric_features])
-
-
-
-numeric_features.remove('SalePrice')
-scaled = scaler.fit_transform(test_new[numeric_features])
-
-for i, col in enumerate(numeric_features):
-      test_new[col] = scaled[:,i]
-
-
+from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.impute import SimpleImputer
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
 # Gerer les variables categoriques
-ct = ColumnTransformer([
-        ('oh_enc', 
-         OneHotEncoder(sparse=False), 
-         [12,13,14,15,16,17]),])
-d_1he= ct.fit_transform(d_ready)
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+features = ['season', 'is_business_day', 'is_holiday']
 
-#Get Feature Names of Encoded columns
-ct.get_feature_names()
-# Converting the numpy array into a pandas dataframe
-d_encoded_data = pd.DataFrame(d_1he, columns=ct.get_feature_names())
-d_encoded_data.drop(['oh_enc__x0_2016', 'oh_enc__x1_1','oh_enc__x2_0', 'oh_enc__x3_0','oh_enc__x4_0', 'oh_enc__x5_fall'], inplace=True, axis=1)
-#Concatenating the encoded dataframe with the original dataframe
-df_concat = pd.concat([d_ready.reset_index(drop=True), d_encoded_data.reset_index(drop=True)], axis=1)
-# Dropping drive-wheels, make and engine-location columns as they are encoded
-df_concat.drop(['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday'], inplace=True, axis=1)
-# Viewing few rows of data
-df_concat.info()
+ct = ColumnTransformer([('oh_enc', OneHotEncoder(sparse=False), [16, 17, 18])], remainder='passthrough')
+d_tr = df.DataFrame(ct.fit_transform(d_tr))
 
-# Gerer les variables numeriques
+d_tr['season'].values
+
+labelencoder_X = LabelEncoder()
+X[:, 0] = labelencoder_X.fit_transform(X[:, 0])
+X
+
+# enlever relation relation d'ordre en creant colomnnes
+onehotencoder = OneHotEncoder(categorical_features = [0])
+X = onehotencoder.fit_transform(X).toarray()
+X
+labelencoder_y = LabelEncoder()
+y = labelencoder_y.fit_transform(y)
+y
 
    
 
 
-## TODO: SUP WEEKDAY check
+
 
 
 categorical_attributes = list(d_tr.select_dtypes(include=['object', 'bool']).columns)
 numerical_attributes = list(d_tr.select_dtypes(include=['float64', 'int64']).columns)
-
 
 
 categorical_features = features.dtypes == 'float', 'int'
@@ -372,16 +334,3 @@ lModel = LinearRegression()
 yLabelsLog = np.log1p(yLabels)
 lModel.fit(X = dataTrain,y = yLabelsLog)
 
-
-
-
-
-#___________________________________________
-
-
-### pour concatener
-X_ = Hitters.drop(['Salary', 'League', 'Division', 'NewLeague'], axis=1).astype('float64')
-# Define the feature set X.
-dummies = pd.get_dummies(Hitters[['League', 'Division', 'NewLeague']])
-X = pd.concat([X_, dummies[['League_N', 'Division_W', 'NewLeague_N']]], axis=1)
-X.info()

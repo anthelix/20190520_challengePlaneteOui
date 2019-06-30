@@ -120,7 +120,9 @@ dataInt.info()
 
 #combine
 data_raw = dataInt.append(dataTest)
-
+data_raw.reset_index(inplace=True)
+data_raw.drop('index',inplace=True,axis=1)
+data_blink = pd.concat([dataInt, dataOut[['consumption_1', 'consumption_2']]], axis=1)
 #data engeebering
 
 dI = data_raw.copy()
@@ -161,14 +163,17 @@ d_tr['season'] = d_tr['rangeInYear'].apply(lambda d : get_season(d))
 d_tr= d_tr.drop(['rangeInYear', 'datetime_perso', 'date', 'timestamp'], axis=1)
 
 
-d_ready = pd.merge(d_tr, dataOut, on='ID', how='right')
+d_ready = pd.merge(d_tr, dataOut, on='ID', how='left')
 
 
 
 
 ## gerer les dummies et les variables num
 train_new = d_ready[d_ready['consumption_1'].notnull()]
+train_new = train_new.drop(['ID'], axis=1)
 test_new = d_ready[d_ready['consumption_1'].isnull()]
+test_new = test_new.drop(['consumption_1', 'consumption_2', 'ID'], axis=1)
+
 train_new.shape
 test_new.shape
 
@@ -176,148 +181,119 @@ test_new.shape
 
 featuresObject = ['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday']
 for var in featuresObject:
-    d_ready[var] = d_ready[var].astype("category")
-numeric_features = d_ready.select_dtypes(include=['float64', 'int64']).columns
+    train_new[var] = train_new[var].astype('category')
+train_new.info()
+#TEST    
+for var in featuresObject:
+    test_new[var] = test_new[var].astype('category')
+
+    
+numeric_features_col_name = [f for f in train_new.columns if train_new[f].dtype == float]
+numeric_features = train_new[numeric_features_col_name]
+#d_ready.select_dtypes(include=['float64', 'int64']).columns
      
 # Les Num
-sc=StandardScaler()
-d_sc=sc.fit_transform(d_ready[numeric_features])
-for i, col in enumerate(numeric_features):
-       d_ready[col] = d_sc[:,i]
-
-
-#scaler = StandardScaler()
-#scaler.fit(train_new[numeric_features])
-#scaled = scaler.transform(train_new[numeric_features])
+ct_num = ColumnTransformer([
+        ('stdScal', StandardScaler(), ['temp_1','temp_2','mean_national_temp','humidity_1',
+         'humidity_2','consumption_secondary_1','consumption_secondary_2','consumption_secondary_3'])],
+    remainder='passthrough')
+    
+train_new = ct_num.fit_transform(numeric_features)
 
 
 
-numeric_features.remove('SalePrice')
-scaled = scaler.fit_transform(test_new[numeric_features])
-
-for i, col in enumerate(numeric_features):
-      test_new[col] = scaled[:,i]
-
-
+#TEST
+test_new = ct_num.fit(numeric_features)
 
 
 # Gerer les variables categoriques
 ct = ColumnTransformer([
         ('oh_enc', 
          OneHotEncoder(sparse=False), 
-         [12,13,14,15,16,17]),])
-d_1he= ct.fit_transform(d_ready)
-
+         [8,9,10,11,12,13]),])
+d_1he = ct.fit_transform(train_new)
 #Get Feature Names of Encoded columns
-ct.get_feature_names()
+#ct.get_feature_names()
 # Converting the numpy array into a pandas dataframe
 d_encoded_data = pd.DataFrame(d_1he, columns=ct.get_feature_names())
 d_encoded_data.drop(['oh_enc__x0_2016', 'oh_enc__x1_1','oh_enc__x2_0', 'oh_enc__x3_0','oh_enc__x4_0', 'oh_enc__x5_fall'], inplace=True, axis=1)
 #Concatenating the encoded dataframe with the original dataframe
-df_concat = pd.concat([d_ready.reset_index(drop=True), d_encoded_data.reset_index(drop=True)], axis=1)
+df_concat = pd.concat([train_new.reset_index(drop=True), d_encoded_data.reset_index(drop=True)], axis=1)
 # Dropping drive-wheels, make and engine-location columns as they are encoded
 df_concat.drop(['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday'], inplace=True, axis=1)
 # Viewing few rows of data
-df_concat.info()
+y_train = df_concat[['consumption_1', 'consumption_2']]
+X_train_prep = df_concat.drop(['consumption_1', 'consumption_2'], axis=1) 
+X_train = X_train_prep[:data_blink.shape[0]]
 
-# Gerer les variables numeriques
-
-   
-
-
-## TODO: SUP WEEKDAY check
-
-
-categorical_attributes = list(d_tr.select_dtypes(include=['object', 'bool']).columns)
-numerical_attributes = list(d_tr.select_dtypes(include=['float64', 'int64']).columns)
-
-
-
-categorical_features = features.dtypes == 'float', 'int'
-numeriacal_features = ~categorical_features
+#TEST
+ct = ColumnTransformer([
+        ('oh_enc', 
+         OneHotEncoder(sparse=False), 
+         [8,9,10,11,12,13]),])
+d_1heTest= ct.fit(test_new)
+d_encoded_data = pd.DataFrame(d_1heTest, columns=ct.get_feature_names())
+df_concat = pd.concat([test_new.reset_index(drop=True), d_encoded_data.reset_index(drop=True)], axis=1)
+X_test = df_concat.drop(['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday'], inplace=True, axis=1)
 
 
 
-dClean.isnull().sum() # A ENLEVER
+
+
+from sklearn.model_selection import TimeSeriesSplit
+tscv = TimeSeriesSplit(n_splits=10)
+print(tscv)
+[(el[0].shape, el[1].shape) for el in tscv.split(X_train)]
+
+
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+lin_reg = LinearRegression()
+lin_reg.fit(X_train, y_train)
+
+consum_predictions = lin_reg.predict(X_train)
+lin_mse = mean_squared_error(y_train, consum_predictions)
+lin_rmse = np.sqrt(lin_mse)
+print('linear_train_rmse', lin_rmse)  #model might be underfitting
+
+from sklearn.model_selection import cross_val_score
+scores = cross_val_score(lin_reg, X_train, y_train, scoring='neg_mean_squared_error', cv=10)
+lin_rmse_scores = np.sqrt(-scores)
+def explain_scores(scores):
+    print("Scores:", scores)
+    print("Mean:", scores.mean())
+    print("Standard deviation:", scores.std())
+explain_scores(lin_rmse_scores)
+
+from sklearn.linear_model import Lasso
+regLasso1 = Lasso(fit_intercept=False,normalize=False)
+print(regLasso1)
+regLasso1.fit(X_train, y_train)
+print(regLasso1.coef_)
+
+my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
+from sklearn.linear_model import lasso_path
+alpha_for_path, coefs_lasso, _ = lasso_path(X_train, y_train ,alphas=my_alphas)
+print(coefs_lasso.shape)
+import matplotlib.cm as cm
+couleurs = cm.rainbow(numpy.linspace(0,1,16))
+
+
+
+
+
+# A helper function for writing predictions to a file
+def write_to_submission_file(predicted_labels, out_file,
+                             target='target', index_label="session_id"):
+    predicted_df = pd.DataFrame(predicted_labels,
+                                index = np.arange(1, predicted_labels.shape[0] + 1),
+                                columns=[target])
+    predicted_df.to_csv(out_file, index_label=index_label)
+
+
+
 #-------------------------------------------------------------------------
 
-# IMPORTING THE DATA SET AND COMBINE
-dataInt = pd.read_csv('./data_set1/input_training_ssnsrY0.csv')
-dataTest = pd.read_csv('./data_set1/input_test_cdKcI0e.csv')
-dataOut = pd.read_csv('./data_set1/output_training_Uf11I9I.csv')
-dataInt.info()
-#combine Input train, Input Test and  output Train
-data_raw = dataInt.append(dataTest)
-data = pd.merge(data_raw, dataOut, on='ID', how='left')
-
-
-data = data.drop('ID', axis=1)
-## CONSTRUCTION DU MODELE
-
-
-# Feature Enginering
-
-# creating New columns from 'timestamp'
-conv(data)
-
-
-
-
-data['day of week']=data['datetime_perso'].dt.dayofweek 
-temp = data['datetime_perso']
-def applyer(row):
-    if row.dayofweek == 5 or row.dayofweek == 6:
-        return 1
-    else:
-        return 0 
-temp2 = data['datetime_perso'].apply(applyer) 
-data['weekend']=temp2
-
-## create season and rangeInYear
-s = pd.to_datetime(pd.Series(data['timestamp']))
-data['rangeInYear'] = s.dt.strftime('%j').astype(int)
-data['season'] = data['rangeInYear'].apply(lambda d : get_season(d))
-
-
-
-## create jours working days
-data['is_business_day'] = data['datetime_perso'].apply(lambda e : int(business_day(e)))
-
-# Is it an holiday for zone A, B or C?
-d = SchoolHolidayDates()
-data['is_holiday'] = data['datetime_perso'].apply(lambda f : int(d.is_holiday(datetime.date(f))))
-
-data.info()
-## missing values
-# matrice des donnees manquantes
-data.isnull().sum() # A ENLEVER
-
-#data_num = [['temp_1', 'temp_2', 'mean_national_temp', 'humidity_1', 'humidity_2', 
-    #'consumption_secondary_1', 'consumption_secondary_2', 'consumption_secondary_3', 
-    #'day of week', 'weekend', 'rangeInYear', 'is_business_day', 'is_holiday']]
-#data_numNoNeedPredic = [[ 'day of week', 'weekend', 'rangeInYear', 'is_business_day', 'is_holiday']]
-data_raw_num = data_raw[['temp_1', 'temp_2', 'mean_national_temp', 'humidity_1', 'humidity_2', 'consumption_secondary_1', 'consumption_secondary_2', 'consumption_secondary_3']]
-
-#data_obj = data[['timestamp', 'loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 
-    #'loc_secondary_3', 'date', 'hour', 'weekday', 'month', 'season']]
-data_labels = data[['consumption_1', 'consumption_2']]
-# join data_mice avec data_obj+data_numNoNeedPredic+data_labels
-
-data_nonePredict = data[['timestamp','loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3','date', 'hour', 'weekday', 'month', 'season','day of week', 'weekend', 'rangeInYear', 'is_business_day', 'is_holiday','consumption_1', 'consumption_2']]
-#sample_incomplete_rows = data_num[data_num.isnull().any(axis=1)]
-
-#categorical_attributes = list(data.select_dtypes(include=['object']).columns)
-#numerical_attributes = list(dataInt.select_dtypes(include=['float64', 'int64']).columns)
-#numerical_attributes = list(data.select_dtypes(include=['float64', 'int64']).columns)
-#print('categorical_attributes:', categorical_attributes)
-#print('numerical_attributes:', numerical_attributes)
-
-# imputation par MICE
-imputed_training_mice=mice(data_raw_num.values)
-data_mice = pd.DataFrame(imputed_training_mice, columns=data_raw_num.columns, index = list(data.index.values))
-data_clean = data_mice.join(data_nonePredict)
-
-data_clean.isnull().sum() # A ENLEVER
 
 
 # Imputation par KNN 
@@ -327,25 +303,14 @@ data_clean.isnull().sum() # A ENLEVER
 
 
 
-# Coercing To Category Type
-categoricalFeatureNames = ['date', 'hour', 'weekday', 'month', 'season', 'is_business_day', 'is_holiday']
-numericalFeatureNames = ['temp_1', 'temp_2', 'mean_national_temp', 'humidity_1', 'humidity_2', 'consumption_secondary_1', 'consumption_secondary_2', 'consumption_secondary_3']
-dropFeatures = ['timestamp','rangeInYear', 'day of week', 'weekend', 'loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3']
-label = ['consumption_1', 'consumption_2']
-for var in categoricalFeatureNames:
-    data_clean[var] = data_clean[var].astype("category")
-
-# Splitting Train And Test Data
-#dataTrain = data_clean[pd.notnull(data_clean['consumption_1'])].sort_values(by=['timestamp'])
-#dataTest = data_clean[~pd.notnull(data_clean['consumption_1'])].sort_values(by=['timestamp'])
-#datatimecol = dataTest['timestamp']
-yLabels = dataTrain[['consumption_1', 'consumption_2']]
 
 
 # dropping unncessary columns
 dataTrain = dataTrain.drop(dropFeatures, axis=1)
 dataTest = dataTest.drop(dropFeatures, axis=1)
 #let's name the categorical and numeical attributes 
+
+
 
 #RMSLE Scorer
 def rmsle(y, y_,convertExp=True):
