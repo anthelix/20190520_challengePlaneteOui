@@ -2,7 +2,6 @@
 #mise sous une fonction les modofications et ajout de colonne
 #agregation  dans pdbdm de dataInt et DataOUt pour avoir une meilleur moyenne sur les missing values
 
-
 #importing the libraries
 import numpy as np
 import pandas as pd
@@ -11,13 +10,19 @@ from vacances_scolaires_france import SchoolHolidayDates
 import sys
 from impyute.imputation.cs import mice
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, Imputer
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import TimeSeriesSplit
-
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+#pip install vacances-scolaires-france
+#pip3 install impyute
 # my fonctions
+# my fonctions
+
 def conv(data):
     data["date"] = data.timestamp.apply(lambda x : x.split('T')[0])
     data["datetime_perso"] = data.timestamp.apply(lambda x : get_format_the_date(x))
@@ -91,13 +96,65 @@ def business_day(timestamp):
     else:
         return False
     
+    
+#creating a function to encapsulate preprocessing, to mkae it easy to replicate on  submission data
+# tester aussi avec dataInt et DataTeat separer dans une future version
+
+def processing(dataInt):
+    ## missing value
+    df = dataInt.copy()
+    df_num = df.drop(['timestamp','loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
+    df_NonNum = df.select_dtypes(include=[np.object])
+    imputed_training_mice = mice(df_num.values)
+    data_mice = pd.DataFrame(imputed_training_mice, columns = df_num.columns, index = list(df.index.values))
+    dClean = data_mice.join(df_NonNum)
+    ## drop variable inutile
+    d_tr = dClean.drop(['loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
+    ## create extra attribute
+    conv(d_tr)
+    d_tr['timestamp'] = pd.to_datetime(d_tr.timestamp, format = '%Y-%m-%dT%H:%M:%S.%f')
+    ## create season and rangeInYear
+    s = pd.to_datetime(pd.Series(d_tr['timestamp']))
+    d_tr['rangeInYear'] = s.dt.strftime('%j').astype(int)
+    d_tr['season'] = d_tr['rangeInYear'].apply(lambda d : get_season(d))
+    #create jours working days
+    d_tr['is_business_day'] = d_tr['datetime_perso'].apply(lambda e : int(business_day(e)))
+    # Is it an holiday for zone A, B or C?
+    d = SchoolHolidayDates()
+    d_tr['is_holiday'] = d_tr['datetime_perso'].apply(lambda f : int(d.is_holiday(datetime.date(f))))
+
+    dataInt1 = d_tr.drop(['rangeInYear', 'datetime_perso', 'date', 'timestamp'], axis=1)
+    return (dataInt1)    
+
+class PandasDataFrameSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, attribute_names):
+        self.attribute_names = attribute_names
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X):
+        return X[self.attribute_names].values
+
+# ex
+feature_list = [...]
+("num_features", Pipeline([\
+                    ("select_num_features", PandasDataFrameSelector(feature_list)),\
+                    ("scales", StandardScaler())
+
+
+
 #------------------------------------------------------------------------------    
 # creere un je de test
-dataInt = pd.read_csv('./data_set1/input_training_ssnsrY0.csv')
+dataInt_raw = pd.read_csv('./data_set1/input_training_ssnsrY0.csv')
 dataTest = pd.read_csv('./data_set1/input_test_cdKcI0e.csv')
 dataOut = pd.read_csv('./data_set1/output_training_Uf11I9I.csv')
-dataInt.info()
-data_blink = pd.concat([dataInt, dataOut[['consumption_1', 'consumption_2']]], axis=1)
+data_blink = pd.concat([dataInt_raw, dataOut_raw[['consumption_1', 'consumption_2']]], axis=1)
+#----------------------
+dataInt = processing(dataInt_raw)
+dataInt.head()
+
+
+
+
 #----------------------
 #SPLIT
 tscv = TimeSeriesSplit(n_splits=10)
@@ -112,64 +169,134 @@ for train_index, test_index in tscv.split(dataInt):
     # X_test et y_test pour tester mon modele
     # dataTest pour la soumission 
 #******************************************************************************    
-## data engeebering Xtrain (a aplliquer sur x_test et dataTest)
-dI = X_train.copy()
-## missing value
-dI_num = dI.drop(['timestamp','loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
-imputed_training_mice=mice(dI_num.values)
-data_mice = pd.DataFrame(imputed_training_mice, columns=dI_num.columns, index = list(dI.index.values))
-dI_NonNum = dI.select_dtypes(include=[np.object])
-dClean = data_mice.join(dI_NonNum)
+Xtrain_new.shape
+Xtrain_new.dtypes
+type(col_name_train)
+Xtrain_new[col_name_train].dtypes
+Xtrain_new[col_name_train].dtypes
+type(numeric_features_train)
+Xtrain_new.info()
 
-## drop variable inutile
-d_tr = dClean.drop(['loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
-## create extra attribute
-d_tr.info() #  A ENLEVER
-conv(d_tr)
-d_tr['timestamp'] = pd.to_datetime(d_tr.timestamp, format = '%Y-%m-%dT%H:%M:%S.%f')
-## create season and rangeInYear
-s = pd.to_datetime(pd.Series(d_tr['timestamp']))
-d_tr['rangeInYear'] = s.dt.strftime('%j').astype(int)
-#create jours working days
-d_tr['is_business_day'] = d_tr['datetime_perso'].apply(lambda e : int(business_day(e)))
-# Is it an holiday for zone A, B or C?
-d = SchoolHolidayDates()
-d_tr['is_holiday'] = d_tr['datetime_perso'].apply(lambda f : int(d.is_holiday(datetime.date(f))))
-d_tr['season'] = d_tr['rangeInYear'].apply(lambda d : get_season(d))
-d_tr= d_tr.drop(['rangeInYear', 'datetime_perso', 'date', 'timestamp'], axis=1)
+Xtrain_new = X_train.drop(['ID'], axis=1)
+
 
 ## gerer les dummies et les variables num
-Xtrain_new = d_tr.drop(['ID'], axis=1)
-Xtrain_new.shape
-featuresObject = ['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday']
-for var in featuresObject:
+
+binary_features = ['is_holiday','is_business_day']
+categorical_features = ['season','year', 'month', 'hours']
+for var in categorical_features:
     Xtrain_new[var] = Xtrain_new[var].astype('category')
-Xtrain_new.dtypes
-numeric_features_col_name_train = [f for f in Xtrain_new.columns if Xtrain_new[f].dtype == float]
-numeric_features_train = Xtrain_new[numeric_features_col_name_train]
-# Les Num
-Xtrain_new.info()
-Xtrain_new[numeric_features_col_name_train].dtypes
-ct_num = ColumnTransformer([
-        ('stdScal', StandardScaler(), ['temp_1','temp_2','mean_national_temp','humidity_1',
-         'humidity_2','consumption_secondary_1','consumption_secondary_2','consumption_secondary_3'])],
-    remainder='passthrough')
-X_tr = ct_num.fit_transform(numeric_features_train)
-Xtrain_new[numeric_features_col_name_train] = pd.DataFrame(X_tr, columns=numeric_features_train.columns, index = list(X_train.index.values))
+numerical_features = [f for f in Xtrain_new.columns if Xtrain_new[f].dtype == float]
+  
 
-Xtrain_new.info()
-
+                    
 # Gerer les variables categoriques
+categorical_transformer = Pipeline(steps=[
+        ('onehot', OneHotEncoder(sparse=False))])
+
+numeric_transformer = Pipeline(steps=[
+        ('scaler', StandardScaler())])
+
+bool_transformer = Pipeline(steps=[
+        ('select_bool',  PandasDataFrameSelector(binary_features)),
+        ('scale', StandardScaler())])
+    
+    
+    
+        
+preprocessor = ColumnTransformer(
+        transformers=[
+                ('num', numeric_transformer, numerical_features),
+                ('cat', categorical_transformer, categorical_features)])
+
+train = preprocessor.fit_transform(Xtrain_new)
+
+
+
+train_df = pd.DataFrame(train, 
+                        columns= numerical_features + list(preprocessor.named_transformers_.cat))
+
+
+train_df.head()
+
+    
 ct = ColumnTransformer([
         ('oh_enc', 
          OneHotEncoder(sparse=False), 
-         [8,9,10,11,12,13]),])
+         [8,9,10,11]),])
 d_1he = ct.fit_transform(Xtrain_new)
 d_encoded_data = pd.DataFrame(d_1he, columns=ct.get_feature_names())
 d_encoded_data.drop(['oh_enc__x0_2016', 'oh_enc__x1_1','oh_enc__x2_0', 'oh_enc__x3_0','oh_enc__x4_0', 'oh_enc__x5_fall'], inplace=True, axis=1)
 df_concat = pd.concat([Xtrain_new.reset_index(drop=True), d_encoded_data.reset_index(drop=True)], axis=1)
 df_concat.drop(['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday'], inplace=True, axis=1)
 X_trained = df_concat[:dataInt.shape[0]]
+
+
+
+# Les Num   
+ 
+ct_num = ColumnTransformer([
+        ('stdScal', StandardScaler(), ['temp_1','temp_2','mean_national_temp','humidity_1',
+         'humidity_2','consumption_secondary_1','consumption_secondary_2','consumption_secondary_3'])],
+    remainder='passthrough')
+        
+X_tr = ct_num.fit_transform(numerical_features)
+Xtrain_new[numerical_features] = pd.DataFrame(X_tr, columns=train.columns, index = list(X_train.index.values))
+type(X_tr)
+Xtrain_new.info()
+type(Xtrain_new)
+
+
+
+#num_ss_step = ('ss', StandardScaler())
+#num_step = [num_ss_step]
+#num_pipe = Pipeline(num_step)
+#numeric_transformers = [('num', num_pipe, numerical_features)]
+
+ct = ColumnTransformer([
+        ('stdScal', StandardScaler(), ['temp_1','temp_2','mean_national_temp','humidity_1',
+         'humidity_2','consumption_secondary_1','consumption_secondary_2','consumption_secondary_3'])],
+    remainder='passthrough')
+
+
+
+#ct = ColumnTransformer(transformers=numeric_transformers)
+X_num_trans = ct.fit_transform(Xtrain_new)
+X_num_trans.shape
+
+transformers =[('num', X_num_trans, numerical_features),
+               ('cat', X_cat_trans, categorical_features)]
+
+ct =ColumnTransformer(transformers=transformers)
+X = ct.fit_transform(Xtrain_new)
+X.shape
+
+
+
+
+
+
+
+from sklearn.linear_model import Ridge
+ml_pipe = Pipeline([('transform', ct), ('ridge', Ridge())])
+ml_pipe.fit(Xtrain_new, X_test)
+ml_pipe.score(Xtrain_new, X_test)
+
+preprocessor = ColumnTransformer(transformers=[
+        ('num', X_num_trans, numerical_features),
+        ('cat', X_cat_trans, categorical_features)],
+        remainder='passthrough')
+
+
+clf = Pipeline(steps=[
+        ('preprocessor', preprocessor)])
+clf.fit(Xtrain, y_train)
+
+
+
+
+# Gerer les variables categoriques
+
 
 #******************************************************************************
 ## data engeebering sur x_test et dataTest)
@@ -199,20 +326,28 @@ d_tr['season'] = d_tr['rangeInYear'].apply(lambda d : get_season(d))
 d_tr= d_tr.drop(['rangeInYear', 'datetime_perso', 'date', 'timestamp'], axis=1)
 
 ## gerer les dummies et les variables num
-
-
-Xtest_new = d_tr.drop(['ID'], axis=1)
+Xtest_new1 = d_tr.drop(['ID'], axis=1)
 featuresObject = ['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday']
-for tar in featuresObject:
-    Xtest_new[tar] = Xtest_new[tar].astype('category')
+for var in featuresObject:
+    Xtest_new1[var] = Xtest_new1[var].astype('category')
+Xtest_new1.info()
+Xtest_new = Xtest_new1.copy()
 
-numeric_features_col_name_test = [e for e in Xtest_new.columns if Xtest_new[e].dtype == float]
-numeric_features_test = Xtest_new[numeric_features_col_name_test]
+col_name_test = [f for f in Xtest_new.columns if Xtest_new[f].dtype == float]
+type(col_name_test)
+numeric_features_test = Xtest_new[col_name_test]
+type(numeric_features_test)
+Xtest_new[col_name_test].dtypes
+
 # Les Num
 
-X_tr = ct_num.fit(numeric_features_test)
-Xtest_new[numeric_features_col_name_test] = pd.DataFrame(X_tr, columns=numeric_features_test.columns, index = list(X_test.index.values))
+X_te = ct_num.fit(numeric_features_test)
+Xtest_new[col_name_test] = pd.DataFrame(X_te, columns=numeric_features_test.columns, index = list(X_test.index.values))
 Xtest_new.info()
+type(X_te)
+print(type(X_te))
+print(X_te[0])
+numeric_features_test = scaler.transform(numeric_features_test.values)
 # Gerer les variables categoriques
 
 d_1he_test = ct.fit(Xtest_new)
@@ -231,59 +366,6 @@ y_test = y_test.drop(['ID'], axis=1)
 #*******************************************************************************
 ###*****************     FAIRE DES ESSAIS    **********************************
 
-
-dI = some_data.copy()
-## missing value
-dI_num = dI.drop(['timestamp','loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
-imputed_training_mice=mice(dI_num.values)
-data_mice = pd.DataFrame(imputed_training_mice, columns=dI_num.columns, index = list(dI.index.values))
-dI_NonNum = dI.select_dtypes(include=[np.object])
-dClean = data_mice.join(dI_NonNum)
-
-## drop variable inutile
-d_tr = dClean.drop(['loc_1', 'loc_2', 'loc_secondary_1', 'loc_secondary_2', 'loc_secondary_3'], axis=1)
-## create extra attribute
-d_tr.info() #  A ENLEVER
-conv(d_tr)
-d_tr['timestamp'] = pd.to_datetime(d_tr.timestamp, format = '%Y-%m-%dT%H:%M:%S.%f')
-## create season and rangeInYear
-s = pd.to_datetime(pd.Series(d_tr['timestamp']))
-d_tr['rangeInYear'] = s.dt.strftime('%j').astype(int)
-#create jours working days
-d_tr['is_business_day'] = d_tr['datetime_perso'].apply(lambda e : int(business_day(e)))
-# Is it an holiday for zone A, B or C?
-d = SchoolHolidayDates()
-d_tr['is_holiday'] = d_tr['datetime_perso'].apply(lambda f : int(d.is_holiday(datetime.date(f))))
-d_tr['season'] = d_tr['rangeInYear'].apply(lambda d : get_season(d))
-d_tr= d_tr.drop(['rangeInYear', 'datetime_perso', 'date', 'timestamp'], axis=1)
-
-## gerer les dummies et les variables num
-Xtrain_new = d_tr.drop(['ID'], axis=1)
-Xtrain_new.shape
-featuresObject = ['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday']
-for var in featuresObject:
-    Xtrain_new[var] = Xtrain_new[var].astype('category')
-Xtrain_new.info()
-numeric_features_col_name = [f for f in Xtrain_new.columns if Xtrain_new[f].dtype == float]
-numeric_features = Xtrain_new[numeric_features_col_name]
-# Les Num
-ct_num = ColumnTransformer([
-        ('stdScal', StandardScaler(), ['temp_1','temp_2','mean_national_temp','humidity_1',
-         'humidity_2','consumption_secondary_1','consumption_secondary_2','consumption_secondary_3'])],
-    remainder='passthrough')
-X = ct_num.fit_transform(numeric_features)
-Xtrain_new[numeric_features_col_name] = pd.DataFrame(X, columns=numeric_features.columns)
-# Gerer les variables categoriques
-ct = ColumnTransformer([
-        ('oh_enc', 
-         OneHotEncoder(sparse=False), 
-         [8,9,10,11,12,13]),])
-d_1he = ct.fit_transform(Xtrain_new)
-d_encoded_data = pd.DataFrame(d_1he, columns=ct.get_feature_names())
-d_encoded_data.drop(['oh_enc__x0_2016', 'oh_enc__x1_1','oh_enc__x2_0', 'oh_enc__x3_0','oh_enc__x4_0', 'oh_enc__x5_fall'], inplace=True, axis=1)
-df_concat = pd.concat([Xtrain_new.reset_index(drop=True), d_encoded_data.reset_index(drop=True)], axis=1)
-df_concat.drop(['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday'], inplace=True, axis=1)
-X_somedata= df_concat[:dataInt.shape[0]]
 
 
 #------------------------------------------------------------------------------
