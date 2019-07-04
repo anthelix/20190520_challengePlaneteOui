@@ -11,7 +11,7 @@ import sys
 from impyute.imputation.cs import mice
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, Imputer
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import TimeSeriesSplit
@@ -194,6 +194,7 @@ numerical_features = [f for f in Xtrain_new.columns if Xtrain_new[f].dtype == fl
 categorical_transformer = Pipeline(steps=[
         ('onehot', OneHotEncoder(sparse=False))])
 
+
 numeric_transformer = Pipeline(steps=[
         ('scaler', StandardScaler())])
 
@@ -209,15 +210,28 @@ preprocessor = ColumnTransformer(
                 ('binary', bool_transformer, binary_features)])
 
 model = preprocessor.fit_transform(Xtrain_new)
+model.shape
+
+
+#?????????????????????????????????????????????????????????????//
 
 
 
-
+ml_pipe=Pipeline([('transform', preprocessor),
+                  ('lin_reg',LinearRegression())])
+ml_pipe.fit(X_train, y_train)
+ml_pipe.score(X_train, y_train)
 
 
 
 train_df = pd.DataFrame(train, 
                         columns= numerical_features + list(preprocessor.named_transformers_.cat))
+
+
+#les noms des colonnes des features categorical
+pl = preprocessor.named_transformers_['cat']
+ohe = pl.named_steps['onehot']
+ohe.get_feature_names()
 
 
 train_df.head()
@@ -292,8 +306,10 @@ preprocessor = ColumnTransformer(transformers=[
 
 
 clf = Pipeline(steps=[
-        ('preprocessor', preprocessor)])
-clf.fit(Xtrain, y_train)
+        ('preprocessor', preprocessor),
+        ('classifier'', LogisticRegession(solver='lbfgs'))])
+
+
 
 
 
