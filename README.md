@@ -10,3 +10,14 @@ installation des environnements et librairies pour Solus (distribution Linux ind
 
 
 
+
+todo:
+savoir expliquer TimeSeriesSplit(n_splits=10)
+variables day year month: essayer comme variable categorique ET Numerique dans une autre version.
+Google: est ce que des variables num continue peuvent etre traiter comme des categorielles?av/inconv
+faire un script de demarrage pour solus et mac
+fusionner notebook graphe static, graphe dynamique
+rajouter des cases a cocher dans le readme?
+essayer RobustScaler au lieu de standardscaler dans une autre version (gestion des outliers)
+
+conda install -c conda-forge statsmodels

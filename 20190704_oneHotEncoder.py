@@ -116,13 +116,12 @@ def processing(dataInt):
     ## create season and rangeInYear
     s = pd.to_datetime(pd.Series(d_tr['timestamp']))
     d_tr['rangeInYear'] = s.dt.strftime('%j').astype(int)
-    d_tr['season'] = d_tr['rangeInYear'].apply(lambda d : get_season(d))
     #create jours working days
     d_tr['is_business_day'] = d_tr['datetime_perso'].apply(lambda e : int(business_day(e)))
     # Is it an holiday for zone A, B or C?
     d = SchoolHolidayDates()
     d_tr['is_holiday'] = d_tr['datetime_perso'].apply(lambda f : int(d.is_holiday(datetime.date(f))))
-
+    d_tr['season'] = d_tr['rangeInYear'].apply(lambda d : get_season(d))
     dataInt1 = d_tr.drop(['rangeInYear', 'datetime_perso', 'date', 'timestamp'], axis=1)
     return (dataInt1)    
 
@@ -138,7 +137,7 @@ data_blink = pd.concat([dataInt, dataOut[['consumption_1', 'consumption_2']]], a
 dataInt = dataInt.drop(['ID'], axis=1)
 dataOut = dataOut.drop(['ID'], axis=1)
 
-
+#------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 #SPLIT
 tscv = TimeSeriesSplit(n_splits=10)
@@ -148,86 +147,70 @@ for train_index, test_index in tscv.split(dataInt):
     X_train, X_test = dataInt.iloc[train_index, :], dataInt.iloc[test_index, :]
     y_train, y_test = dataOut.iloc[train_index, :], dataOut.iloc[test_index, :]
 
-y_train = y_train.values.reshape(-1, 2)
-y_test = y_test.values.reshape(-1,2)
-y_train.shape
+ytrain = y_train.values.reshape(-1, 2)
+ytest = y_test.values.reshape(-1,2)
+ytrain.shape
 
 #------------------------------------------------------------------------------
 
-
+# jeu de donnees propres:
+    # X_train et y_train pour faire le modele
+    # X_test et y_test pour tester mon modele
+    # dataTest pour la soumission
 #--------------------------TRAIN-----------------------------------------------
-
-
-
-#----------------------
 Xtrain = processing(X_train)
 Xtrain.head()
 Xtrain.columns
 
+#------features binary
+#binary_features = ['is_holiday','is_business_day']
 
-
+#------features num
+num_features = ['year', 'month', 'hours']
+for temp in num_features:
+    Xtrain[temp] = Xtrain[temp].astype('float')
 numerical_features = [f for f in Xtrain.columns if Xtrain[f].dtype == float]
-Xtrain_num = Xtrain[numerical_features].values
 scaler =  StandardScaler()
-Xtrain_num = scaler.fit_transform(Xtrain_num)
-#^^^^^^^^^
-binary_features = ['is_holiday','is_business_day']
+scaler.fit(Xtrain[numerical_features].values)
+Xtrain[numerical_features] = scaler.transform(Xtrain[numerical_features].values)
 
-
-categorical_features = ['year', 'month', 'hours', 'season' ]
+#------features cat
+categorical_features = ['season']
 for var in categorical_features:
     Xtrain[var] = Xtrain[var].astype('category')
-Xtrain_cat = Xtrain[categorical_features].values
-
-encoder = OneHotEncoder()
-encoder.categories_
-encoder.get_feature_names()
-
-
-
-Xtrain_cat = pd.DataFrame(Xtrain_cat)
-Xtrain_cat.head(5)
-Xtrain_cat.info()
-Xtrain_cat.drop(['x0_2016', 'x1_1','x2_0', 'x3_fall'], inplace=True, axis=1)
-#^^^^^^^^^
-
-#Get Feature Names of Encoded columns
-encoder.get_feature_names()
-Xtrain_cat
-Xtrain_cat.shape
-type(Xtrain_cat)
-
-
-
-# Converting the numpy array into a pandas dataframe
-d_encoded_data2 = pd.DataFrame(Xtrain_cat, columns=encoder.get_feature_names())
-d_encoded_data.drop(['oh_enc__x0_2016', 'oh_enc__x1_1','oh_enc__x2_0', 'oh_enc__x3_0','oh_enc__x4_0', 'oh_enc__x5_fall'], inplace=True, axis=1)
-#Concatenating the encoded dataframe with the original dataframe
-df_concat = pd.concat([d_ready.reset_index(drop=True), d_encoded_data.reset_index(drop=True)], axis=1)
-# Dropping drive-wheels, make and engine-location columns as they are encoded
-df_concat.drop(['season', 'year', 'month', 'hours', 'is_business_day', 'is_holiday'], inplace=True, axis=1)
-# Viewing few rows of data
-df_concat.info()
-
-
-
-#??????????????????????????????????????????????????????????????????????????????
-Xtrain_new.shape
-Xtrain_new.dtypes
-type(col_name_train)
-Xtrain_new[col_name_train].dtypes
-Xtrain_new[col_name_train].dtypes
-type(numeric_features_train)
-Xtrain_new.info()
-dataInt.dtypes
-# jeu de donnees propres:
-    # X-train et y_train pour faire le modele
-    # X_test et y_test pour tester mon modele
-    # dataTest pour la soumission
-
+Xtrain.dtypes
+list(Xtrain.columns)
+Xtrain1 = pd.get_dummies(Xtrain, drop_first = True)
+list(Xtrain1.columns)
+Xtrain_prep = Xtrain1.values
 
 #----------------------------TEST----------------------------------------------
 Xtest = processing(X_test)
+for temp in num_features:
+    Xtest[temp] = Xtest[temp].astype('float')
+numerical_features = [f for f in Xtest.columns if Xtest[f].dtype == float]
+Xtest[numerical_features] = scaler.transform(Xtest[numerical_features].values)
 for var in categorical_features:
     Xtest[var] = Xtest[var].astype('category')
-numerical_features = [f for f in Xtest.columns if Xtest[f].dtype == float]
+Xtest.dtypes
+list(Xtest.columns)
+Xtest1 = pd.get_dummies(Xtest, drop_first = True)
+
+# Get missing columns in the training xtest
+missing_cols = set( Xtrain1.columns ) - set( Xtest1.columns )
+# Add a missing column in Xtest set with default value equal to 0
+for c in missing_cols:
+    Xtest1[c] = 0
+# Ensure the order of column in the xtest set is in the same order than in xtrain set
+Xtest1 = Xtest1[Xtrain1.columns]
+
+list(Xtest1.columns)
+
+Xtest_prep = Xtest1.values
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+
+
+
