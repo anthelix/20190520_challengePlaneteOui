@@ -21,3 +21,7 @@ rajouter des cases a cocher dans le readme?
 essayer RobustScaler au lieu de standardscaler dans une autre version (gestion des outliers)
 
 conda install -c conda-forge statsmodels
+
+a essayer:
+
+rajouter orederes false aux variables 'cata' :ozone["JOUR"]=pd.Categorical(ozone["JOUR"],ordered=False)
