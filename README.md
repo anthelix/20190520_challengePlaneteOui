@@ -25,3 +25,9 @@ conda install -c conda-forge statsmodels
 a essayer:
 
 rajouter orederes false aux variables 'cata' :ozone["JOUR"]=pd.Categorical(ozone["JOUR"],ordered=False)
+
+
+multiTarget regression
+https://towardsdatascience.com/regression-models-with-multiple-target-variables-8baa75aacd
+https://stackoverflow.com/questions/50132322/how-does-multiple-target-ridge-regression-work-in-scikit-learn
+

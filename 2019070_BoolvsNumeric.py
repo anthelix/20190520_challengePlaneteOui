@@ -178,13 +178,22 @@ ytrain.shape
     # X_test et y_test pour tester mon modele
     # dataTest pour la soumission
 #--------------------------TRAIN-----------------------------------------------
-Xtrain = processing(X_train)
-Xtest = processing(X_test)
-Xtrain.head()
-Xtrain.columns
+Xtrain1 = processing(X_train)
+Xtest1 = processing(X_test)
+Xtrain1.head()
+Xtrain1.columns
+Xtrain = Xtrain1.copy()
+Xtest = Xtest1.copy()
+#------------------------------------------------------------------------------
+print("Xtrain shape: {}".format(Xtrain.shape))
+print("ytrain shape: {}".format(ytrain.shape))
+print("Xtest shape: {}".format(Xtest.shape))
+print("ytest shape: {}".format(ytest.shape))
+Xtrain.dtypes
+
 
 #------features binary
-binary_features = ['is_holiday','is_business_day']
+#binary_features = ['is_holiday','is_business_day']
 
 
 #------features num
@@ -204,7 +213,7 @@ Xtest[numerical_features] = scaler.transform(Xtest[numerical_features].values)
 
 
 #------features cat
-categorical_features = ['year', 'month', 'hours', 'season']
+categorical_features = ['year', 'month', 'hours', 'season', 'is_holiday','is_business_day']
 for var in categorical_features:
     Xtrain[var] = Xtrain[var].astype('category')
     Xtest[var] = Xtest[var].astype('category')
@@ -221,9 +230,9 @@ for column in categorical_features:
 #comment les classer par oredre? importance de l'ordre
 # novembre enlever et decembre devient la 1ere colonne
 
-Xtrain = pd.get_dummies(Xtrain, drop_first=True)
+#Xtrain = pd.get_dummies(Xtrain, drop_first=True)
 print(Xtrain)
-Xtest = pd.get_dummies(Xtest, drop_first=True)
+#Xtest = pd.get_dummies(Xtest, drop_first=True)
 print(Xtest)
 Xtrain = Xtrain[Xtrain.columns]
 Xtest = Xtest[Xtest.columns]
@@ -241,7 +250,14 @@ print("ytest shape: {}".format(ytest.shape))
 #------------------------------------------------------------------------------
 #-------------------------MODELING---------------------------------------------
 
+from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import AdaBoostRegressor
 
+from sklearn.tree import DecisionTreeRegressor
+
+from sklearn.multioutput import MultiOutputRegressor
 
 classifiers = [['linear Regression :' ,LinearRegression()],
                 ['Ridge01 :' ,Ridge(alpha=0.01)],
@@ -251,7 +267,9 @@ classifiers = [['linear Regression :' ,LinearRegression()],
                 ['Lasso1 alpha.01 :', Lasso(alpha=0.01, max_iter=10e5)],
                 ['Lasso alpha00001 :', Lasso(alpha=0.0001, max_iter=10e5)],
                 ['Elastic Net ratio 0,5 :', ElasticNet(alpha=1, l1_ratio=0.5, normalize=False)],
-                ['Elasic Net ratio 1:',  ElasticNet(alpha=1, l1_ratio=1, normalize=False)]]
+                ['Elasic Net ratio 1:',  ElasticNet(alpha=1, l1_ratio=1, normalize=False)],
+                ['Multi Output GBR :', MultiOutputRegressor(GradientBoostingRegressor(), n_jobs=-1)],
+                ['Multi Output RFR :', MultiOutputRegressor(RandomForestRegressor(n_estimators=100, max_depth=30, random_state=0), n_jobs=-1)]]
 
 print("Accuracy Results ...")
 from sklearn.metrics import r2_score
@@ -262,8 +280,8 @@ for name, classifier in classifiers:
     classifier = classifier
     classifier.fit(Xtrain_prep, ytrain)
     predictions = classifier.predict(Xtest_prep)
-    print("{} train_score {:.2f}".format(name, classifier.score(Xtrain_prep, ytrain)))
-    print('le score y R2 est {:.2f}'.format(r2_score(ytrain, classifier.predict(Xtrain_prep))))
+    #print("{} train_score {:.2f}".format(name, classifier.score(Xtrain_prep, ytrain)))
+    #print('le score y R2 est {:.2f}'.format(r2_score(ytrain, classifier.predict(Xtrain_prep))))
     print("{} test_score {:.2f}".format(name, classifier.score(Xtest_prep, ytest)))
     print('le score y R2 est {:.2f}'.format(r2_score(ytest, classifier.predict(Xtest_prep))))
     print("{}  RMSE {:.2f}".format(name, np.sqrt(metrics.mean_squared_error(ytest, predictions))))
