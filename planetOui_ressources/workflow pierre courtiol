@@ -1,0 +1,98 @@
+
+Stephane Mallat
+Pierre courtiol
+
+
+donne par le challenge:
+X train, Y train, X test
+pas acces a Y pred qui contient Y test public et Y test Privee
+donc semi supervise
+
+soumissiom d'un vecteur de soumission pour le cjhallenge
+
+connaissances requises 
+	regression lineaire
+	perceptron multicouche
+	arbres decisionnels
+	boosting
+	reseaux de neurones a convolution
+	reseaux de neurones recurrents
+
+savoir parametrer efficacement les algo
+connaitre leurs limites
+
+accurancy tx: tx d'exactitude etnon precision nb de vrai positif et vrai negatif
+
+strucutre de donnees 
+	table de hashage
+	listes
+	arbres binaires
+
+complexites algorithmique
+
+gestion d ela memoire
+
+ecrire du code rapidememnt
+ecrire diu code optimise
+ecrire du code structure
+
+
+1_passage en revue de l'etat de l'art(5%)
+	comprendre le but du challenge
+	regarder publications
+	anciennes competition
+2_explorations des donnees(20%)
+3_Features engineering(50%)
+	ingenieurie des caracteristiq
+	trouver des nouvellesv ariables explicatives
+4_mise en place d'une procedure d'evaluation(10%)
+5_ creation d'un modele(15%)
+	
+EXPLORATION DES DONNEES
+	comprehension de ce que represente chaque variable
+	Analyse de la cible (donnees equilibrees)
+		si desequilibre, plus de l'un ou de l'autre ==> reequilibrrer les donnees
+	Type de variables
+		categorielles
+		ordinales
+		continues
+	Analyse des variables explicatives
+		plotter
+	Valeurs manquantes
+
+	correlation entre les variables
+==>	se familiariser avec le jeu de donnees
+
+FEATURE ENGINEERING
+	valeurs numerique
+	extraction perninente de l'information cachee
+	selection variables explicatives
+		elever variables nefaste risque sur apprentissage
+enlever les ID
+transformer orinal en entier
+on peut transformer en bouleen aussi
+valeur manquante: valeur moyenne,
+rajouter features pour aider algo, pour qil calcul moins et moins de risque de predictions incomplete puisquon lui donne le calcul faite
+
+PROCEDURE D'EVALUATION
+- decoupage aleatoire /validation(50%/50%)
+	dataset = E + V 
+	entrainement sur E puis evaluation sur V
+	incnv: surevaluation ou sous evaluation du modele
+	utilisation d'un sous ensemble des donnees pour l'entrainement
+- validation croisee: decoupage en k parties (k-fold)
+	pour chacune des k parties, validation sur k et entrainement du modele sur les k-1 partiesrestantes
+
+CREATION DES MODELES
+	ajuster les hyper parametres
+	mauellement
+	autumaniq
+		hyperopt
+		grid search
+souvent Xgboost le meilleur
+
+calcul les scores des algo
+	- moyenner les predictions de chacun des algo et calculer le score sur le ecteur de predictions moyenner
+	- entrainement d'un nouveau classifieur pour combiner les predictions des algo
+
+
