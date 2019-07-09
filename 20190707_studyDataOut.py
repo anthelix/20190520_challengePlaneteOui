@@ -1,7 +1,7 @@
 ### changement par rapport a pdbdm
 #mise sous une fonction les modofications et ajout de colonne
 #agregation  dans pdbdm de dataInt et DataOUt pour avoir une meilleur moyenne sur les missing values
-
+# y = np.log1p(trainout)
 
 ### import log a chercher
 
@@ -21,10 +21,21 @@ from sklearn.linear_model import LinearRegression, Ridge, LassoCV, MultiTaskLass
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import TimeSeriesSplit
-
+from sklearn.linear_model import ElasticNet
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
+from sklearn import metrics
+import warnings
+warnings.filterwarnings("ignore")
+
+from sklearn.linear_model import Lasso
+from sklearn.metrics import mean_squared_log_error
+from xgboost import XGBRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_squared_log_error
+import matplotlib.pyplot as plt
+
 #pip install vacances-scolaires-france
 #conda install -c conda-forge xgboost
 #pip3 install impyute
@@ -157,10 +168,16 @@ for train_index, test_index in tscv.split(dataInt):
     y_train, y_test = dataOut.iloc[train_index, :], dataOut.iloc[test_index, :]
 
 ytrain = y_train.values.reshape(-1, 2)
-ytest = y_test.values.reshape(-1,2)
+ytest = y_test.values.reshape(-1, 2)
 ytrain.shape
 
 #------------------------------------------------------------------------------
+# covariance dataOut
+
+import scipy.stats as st
+print(st.pearsonr(dataOut["consumption_1"],dataOut["consumption_2"])[0])
+print(np.cov(dataOut["consumption_1"],dataOut["consumption_2"],ddof=0)[1,0])
+print (np.corrcoef(dataOut["consumption_1"], dataOut["consumption_2"]))
 
 # jeu de donnees propres:
     # X_train et y_train pour faire le modele
@@ -230,107 +247,34 @@ print("ytest shape: {}".format(ytest.shape))
 #------------------------------------------------------------------------------
 #-------------------------MODELING---------------------------------------------
 
-from sklearn.linear_model import Lasso
-from sklearn.metrics import mean_squared_log_error
-from xgboost import XGBRegressor
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_log_error
-import matplotlib.pyplot as plt
 
 
+classifiers = [['linear Regression :' ,LinearRegression()],
+                ['Ridge01 :' ,Ridge(alpha=0.01)],
+                ['Ridge100 :' ,Ridge(alpha=100)],
+                ['Lasso :' , Lasso()],
+                ['Lasso alpha.1 :' , Lasso(alpha=0.1, max_iter=10e5)],
+                ['Lasso1 alpha.01 :', Lasso(alpha=0.01, max_iter=10e5)],
+                ['Lasso alpha00001 :', Lasso(alpha=0.0001, max_iter=10e5)],
+                ['Elastic Net ratio 0,5 :', ElasticNet(alpha=1, l1_ratio=0.5, normalize=False)],
+                ['Elasic Net ratio 1:',  ElasticNet(alpha=1, l1_ratio=1, normalize=False)]]
 
-lr = LinearRegression().fit(Xtrain_prep, ytrain)
-print("Training lr set score: {:.2f}".format(lr.score(Xtrain_prep, ytrain))) #0.90
-print("Test lr set score: {:.2f}".format(lr.score(Xtest_prep, ytest)))   #0.77   sur apprentissge
-lrn = LinearRegression()
-lrn.fit(Xtrain_prep, ytrain)
-
-ridge = Ridge().fit(Xtrain_prep, ytrain)
-print("Training ridge set score: {:.2f}".format(ridge.score(Xtrain_prep, ytrain))) #0.90
-print("Test ridge set score: {:.2f}".format(ridge.score(Xtest_prep, ytest))) #0.77
-
-ridge10 = Ridge(alpha=10).fit(Xtrain_prep, ytrain)
-print("Training ridge set score: {:.2f}".format(ridge10.score(Xtrain_prep, ytrain))) #0.90
-print("Test ridge set score: {:.2f}".format(ridge10.score(Xtest_prep, ytest))) #0.78
-
-
-rr = Ridge(alpha=0.01)
-rr.fit(Xtrain_prep, y_train)
-rr100 = Ridge(alpha=100)
-rr100.fit(Xtrain_prep, y_train)
-train_score = lr.score(Xtrain_prep, ytrain)
-test_score = lr.score(Xtest_prep, ytest)
-ridge_train_score = rr.score(Xtrain_prep, ytrain)
-ridge_test_score = rr.score(Xtest_prep, ytest)
-ridge_train_score100 = rr100.score(Xtrain_prep, ytrain)
-ridge_test_score100 = rr100.score(Xtest_prep, ytest)
-lasso  = Lasso()
-lasso.fit(Xtrain_prep, ytrain)
-train_lasso_score = lasso.score(Xtrain_prep, ytrain)
-test_lasso_score = lasso.score(Xtest_prep, ytest)
-coeff_used = np.sum(lasso.coef_!=0)
-lasso001 = Lasso(alpha=0.01, max_iter=10e5)
-lasso001.fit(Xtrain_prep, ytrain)
-train_score001=lasso001.score(Xtrain_prep, ytrain)
-test_score001=lasso001.score(Xtest_prep, ytest)
-coeff_used001 = np.sum(lasso001.coef_!=0)
-lasso00001 = Lasso(alpha=0.0001, max_iter=10e5)
-lasso00001.fit(Xtrain_prep, ytrain)
-train_score00001=lasso00001.score(Xtrain_prep, ytrain)
-test_score00001=lasso00001.score(Xtest_prep, ytest)
-coeff_used00001 = np.sum(lasso00001.coef_!=0)
-
-
-print ("linear regression train score:", train_score) #0.90
-print ("linear regression test score:", test_score) #0.80
-print ("ridge regression train score low alpha:", ridge_train_score)#0.90
-print ("ridge regression test score low alpha:", ridge_test_score) #076
-print ("ridge regression train score high alpha:", ridge_train_score100) # 0.90
-print ("ridge regression test score high alpha:", ridge_test_score100) #0.81
-print ("lasso regression train score:", train_lasso_score ) #0,87
-print ("lasso regression test score:", test_lasso_score ) #0,85
-print ("nombe de features:", coeff_used ) #17
-print ("training score for alpha=0.01", train_score001  ) #0,90
-print ("test score for alpha=0.01:", test_score001 ) #0,83
-print ("nombe de features:", coeff_used ) #17
-print ("training score for alpha=0.0001", train_score00001  ) #0,90
-print ("test score for alpha=0.0001:", test_score00001 ) #0,83
-print ("nombe de features:", coeff_used ) #17
-
-
-
-
-
-
-
-
-
-ridge01 = Ridge(alpha=0.1).fit(Xtrain_prep, ytrain)
-print("Training ridge set score: {:.2f}".format(ridge01.score(Xtrain_prep, ytrain))) #0.87
-print("Test ridge set score: {:.2f}".format(ridge01.score(Xtest_prep, ytest))) #0.81
-
-
-
-lasso1 = Lasso(fit_intercept=False,normalize=False).fit(Xtrain_prep, ytrain)
-print(lasso1)
-print("Training Lasso set score: {:.2f}".format(lasso1.score(Xtrain_prep, ytrain))) #0.54
-print("Test lasso set score: {:.2f}".format(lasso01.score(Xtest_prep, ytest)))   #-6.19
-from sklearn.linear_model import lasso_path
-from sklearn.linear_model import MultiTaskLassoCV
+print("Accuracy Results ...")
 from sklearn.metrics import r2_score
+#   RMSE erreur quadratique moyenne(erreur d'estimation)
+#   R_sqaure qualite moyenne de regression
 
-reg = MultiTaskLassoCV(cv=5, random_state=0).fit(Xtrain_prep, ytrain)
-print(r2_score(ytrain, reg.predict(Xtrain_prep))) #0.8
-print(reg.alpha_) #0.6
+for name, classifier in classifiers:
+    classifier = classifier
+    classifier.fit(Xtrain_prep, ytrain)
+    predictions = classifier.predict(Xtest_prep)
+    print("{} train_score {:.2f}".format(name, classifier.score(Xtrain_prep, ytrain)))
+    print('le score y R2 est {:.2f}'.format(r2_score(ytrain, classifier.predict(Xtrain_prep))))
+    print("{} test_score {:.2f}".format(name, classifier.score(Xtest_prep, ytest)))
+    print('le score y R2 est {:.2f}'.format(r2_score(ytest, classifier.predict(Xtest_prep))))
+    print("{}  RMSE {:.2f}".format(name, np.sqrt(metrics.mean_squared_error(ytest, predictions))))
+    print("{}   MSE {:.2f}".format(name, mean_squared_error(ytest, predictions)))
+    print("{}   MAE {:.2f}".format(name, metrics.mean_absolute_error(ytest, predictions)))
+    print(10*' ' + '>>' + 5*'-' + '<<')
 
-
-my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
-
-lcv = MultiTaskLassoCV(alphas=my_alphas,random_state=0,cv=5)
-lcv.fit(Xtrain_prep,ytrain)
-print(r2_score(ytrain,lcv.predict(Xtrain_prep))) #0.87
-print(lcv.alpha_)
-print(lcv.mse_path_)#0.8
-avg_mse = np.mean(lcv.mse_path_, axis=1)
-print(pd.DataFrame({'alpha': lcv.alphas_, 'MSE':avg_mse}))
-
+y_train.head(5)
