@@ -26,7 +26,9 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_log_error
 
-
+#pip install vacances-scolaires-france
+#pip install impyute
+#pip3 install xgboost
 
 def conv(data):
     data["date"] = data.timestamp.apply(lambda x : x.split('T')[0])
@@ -126,6 +128,25 @@ def processing(dataInt):
     dataInt1 = d_tr.drop(['rangeInYear', 'datetime_perso', 'date', 'timestamp'], axis=1)
     return (dataInt1)    
 
+#metric donner par l"ENS
+def weighted_mean_absolute_error(dataframe_1, dataframe_2):
+    """Weighted mean absolute error regression loss
+
+        ----------
+        y_true : array-like of shape = (n_samples,2)
+        Ground truth (correct) target values.
+        y_pred : array-like of shape = (n_samples,2)
+        Estimated target values.
+
+        """
+
+    y_true = dataframe_1.values
+    y_pred = dataframe_2.values
+    c12 = np.array([1136987, 1364719])
+
+    return 2 * metrics.mean_absolute_error(y_true*c12, y_pred*c12) / np.sum(c12)
+
+
 #------------------------------------------------------------------------------    
 
 # creere un je de test
@@ -223,17 +244,19 @@ from sklearn.tree import DecisionTreeRegressor
 
 from sklearn.multioutput import MultiOutputRegressor
 
-classifiers = [['linear Regression :' ,LinearRegression()],
-                ['Ridge01 :' ,Ridge(alpha=0.01)],
-                ['Ridge100 :' ,Ridge(alpha=100)],
-                ['Lasso :' , Lasso()],
-                ['Lasso alpha.1 :' , Lasso(alpha=0.1, max_iter=10e5)],
-                ['Lasso1 alpha.01 :', Lasso(alpha=0.01, max_iter=10e5)],
-                ['Lasso alpha00001 :', Lasso(alpha=0.0001, max_iter=10e5)],
-                ['Elastic Net ratio 0,5 :', ElasticNet(alpha=1, l1_ratio=0.5, normalize=False)],
-                ['Elasic Net ratio 1:',  ElasticNet(alpha=1, l1_ratio=1, normalize=False)],
-                ['Multi Output GBR :', MultiOutputRegressor(GradientBoostingRegressor(), n_jobs=-1)],
-                ['Multi Output RFR :', MultiOutputRegressor(RandomForestRegressor(n_estimators=1000, max_depth=40, random_state=0), n_jobs=-1)]]
+classifiers = [['linear Regression :' ,LinearRegression()], #rmse #26.75 ENS 21,72
+                #['Ridge01 :' ,Ridge(alpha=0.01)],
+                #['Ridge100 :' ,Ridge(alpha=100)],
+                #['Lasso :' , Lasso()],
+                #['Lasso alpha.1 :' , Lasso(alpha=0.1, max_iter=10e5)],
+                #['Lasso1 alpha.01 :', Lasso(alpha=0.01, max_iter=10e5)],
+                #['Lasso alpha00001 :', Lasso(alpha=0.0001, max_iter=10e5)],
+                #['Elastic Net ratio 0,5 :', ElasticNet(alpha=1, l1_ratio=0.5, normalize=False)],
+                #['Elasic Net ratio 1:',  ElasticNet(alpha=1, l1_ratio=1, normalize=False)],
+                #['Multi Output GBR :', MultiOutputRegressor(GradientBoostingRegressor(), n_jobs=-1)],
+                ['Multi Output RFR :', MultiOutputRegressor(RandomForestRegressor(n_estimators=1000, 
+                                                                                  max_depth=40, 
+                                                                                  random_state=0), n_jobs=-1)]] #rmse 18,08 ENS 11.45
 
 print("Accuracy Results ...")
 from sklearn.metrics import r2_score
@@ -251,6 +274,7 @@ for name, classifier in classifiers:
     print("{}  RMSE {:.2f}".format(name, np.sqrt(metrics.mean_squared_error(ytest, predictions))))
     print("{}   MSE {:.2f}".format(name, mean_squared_error(ytest, predictions)))
     print("{}   MAE {:.2f}".format(name, metrics.mean_absolute_error(ytest, predictions)))
+    print("Metric de l'ENS {:.2f}".format(weighted_mean_absolute_error(pd.DataFrame(ytest), pd.DataFrame(predictions))))
     print(10*' ' + '>>' + 5*'-' + '<<')
 
 y_train.head(5)
@@ -284,6 +308,6 @@ datatest = datatest[datatest.columns]
 datatest_val = datatest.values
 predicted_data = my_model.predict(datatest_val)
 print(predicted_data[:,0]) 
-my_submission = pd.DataFrame({'ID': datatest_raw.ID, 'consumption_1': predicted_data[:,0], 'consumption_2': predicted_data[:,1] })
-my_submission.to_csv('submission.csv', index=False)
+#my_submission = pd.DataFrame({'ID': datatest_raw.ID, 'consumption_1': predicted_data[:,0], 'consumption_2': predicted_data[:,1] })
+#my_submission.to_csv('submission.csv', index=False)
 
