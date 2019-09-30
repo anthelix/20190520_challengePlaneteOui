@@ -1,31 +1,31 @@
 # 20190520_challengePlaneteOui
 Challenge PlaneteOui working folder
 
+				>------------<
+planeteOui_ressources :mes notes et mes fichiers de travail JupyterNotebook et .py pour l'environnement spyder
+ML_exe : les exercices de ressources exertenes pour avancer sur le challenge
+spanishElectricity: pour comprendre les timeseries 
+initial_data_set : fichier de back-up des donnees initiales
 
-PlaneteOui_ressources contient mes notes et doc trouves sur le net
-data_set1 contient les donnees
+				>------------<
+planetOui_ressources/20190608_Note.odt --> mes notes
+fichier d'exploration des donnes --> 	planetOui_ressources/20190710_coor
+					/20190617_jupyter.ipynb
+					/20190710_newthings
+					/20190713_verifier_trend
+					/20190714_trend.ipynb
+					/20190716_VAR
+fichier de visualisation dynamique --> planetOui_ressources/20190621_lass0.ipynb
+une des "submission" --> planetOui_ressources/Untitled3.ipynb
+ 
 les fichiers de travail en .py pour spyder et .ipynb pour jupyter Notebook
 
+				>------------<
 installation des environnements et librairies pour Solus (distribution Linux indépendante) et pour IOS, dans le sgoinfre de 42 dans le todo du dossier ~/Doc/ML/DeepLearning
-
-
-
-
-todo:
-savoir expliquer TimeSeriesSplit(n_splits=10)
-variables day year month: essayer comme variable categorique ET Numerique dans une autre version.
-Google: est ce que des variables num continue peuvent etre traiter comme des categorielles?av/inconv
-faire un script de demarrage pour solus et mac
-fusionner notebook graphe static, graphe dynamique
-rajouter des cases a cocher dans le readme?
-essayer RobustScaler au lieu de standardscaler dans une autre version (gestion des outliers)
-
 conda install -c conda-forge statsmodels
 
-a essayer:
 
-rajouter orederes false aux variables 'cata' :ozone["JOUR"]=pd.Categorical(ozone["JOUR"],ordered=False)
-
+				>------------<
 
 multiTarget regression
 https://towardsdatascience.com/regression-models-with-multiple-target-variables-8baa75aacd
