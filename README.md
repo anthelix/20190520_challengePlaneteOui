@@ -1,7 +1,5 @@
 # 20190520_challengePlaneteOui	
 
-
-
 				>------------<
 
 - planetOui_ressources/20190608_Note.odt --> mes notes
