@@ -2,9 +2,9 @@
 
 				>------------<
 
-- planetOui_ressources/20190608_Note.odt --> mes notes
+- 20190608_Note.odt --> mes notes
 - fichier d'exploration des donnes 	
-	- planetOui_ressources/20190710_coor
+	- 20190710_coor
 	- 20190617_jupyter.ipynb
 	- 20190710_newthings
 	- 20190713_verifier_trend
